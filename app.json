@@ -1,0 +1,45 @@
+{
+  "expo": {
+    "name": "Suparna's Kitchen",
+    "slug": "suparnas-kitchen",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#00897B"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#00897B"
+      },
+      "package": "com.yash.suparnazkitchen"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.yash.suparnazkitchen"
+    },
+    "sdkVersion": "54.0.0",
+    "platforms": [
+      "android"
+    ],
+    "updates": {
+      "enabled": false
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "plugins": [
+      "expo-sqlite",
+      "@react-native-community/datetimepicker"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "87e8b0f1-5802-4e2e-9f94-b97e0f7c955b"
+      }
+    }
+  }
+}
