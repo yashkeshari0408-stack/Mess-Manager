@@ -246,9 +246,11 @@ export const getTodayStatusForAllUsers = (todayStr) => {
 
 export const getUsersWithMealPlans = () => {
   return selectQuery(`
-    SELECT u.id, u.name, u.phone,
-      COALESCE(mp.tokensRemaining, 38) as tokensRemaining,
-      mp.startDate, mp.endDate
+    SELECT u.id, u.name, u.phone, u.room,
+      COALESCE(mp.tokensRemaining, 0) as tokensRemaining,
+      mp.startDate, mp.endDate,
+      CAST((julianday(mp.endDate) - julianday('now')) 
+        AS INTEGER) as daysLeft
     FROM USERS u
     LEFT JOIN MEAL_PLANS mp ON mp.userId = u.id
     ORDER BY u.name ASC;
@@ -347,17 +349,29 @@ export const refundToken = async (userId) => {
 export const getTodayAttendanceSummary = (dateStr, mealType) => {
   return selectQuery(`
     SELECT 
-      COALESCE(SUM(CASE WHEN status = 'Present' THEN 1 ELSE 0 END), 0) as presentCount,
-      COALESCE(SUM(CASE WHEN status = 'Absent' THEN 1 ELSE 0 END), 0) as absentCount,
-      COALESCE(SUM(CASE WHEN status = 'Home' THEN 1 ELSE 0 END), 0) as homeCount,
-      COALESCE(COUNT(*), 0) as markedCount
+      COALESCE(SUM(CASE WHEN status = 'Present' 
+        THEN 1 ELSE 0 END), 0) as presentCount,
+      COALESCE(SUM(CASE WHEN status = 'Absent' 
+        THEN 1 ELSE 0 END), 0) as absentCount,
+      COALESCE(SUM(CASE WHEN status = 'Home' 
+        THEN 1 ELSE 0 END), 0) as homeCount,
+      COUNT(*) as markedCount
     FROM ATTENDANCE
     WHERE date = ? AND mealType = ?;
   `, [dateStr, mealType]);
 };
 
-export const getTotalActiveUsers = () => {
-  return selectQuery('SELECT COUNT(*) as total FROM USERS;');
+export const getTotalActiveUsers = (dateStr) => {
+  if (!dateStr) {
+    return selectQuery('SELECT COUNT(*) as total FROM USERS;');
+  }
+  return selectQuery(`
+    SELECT COUNT(*) as total 
+    FROM USERS u
+    INNER JOIN MEAL_PLANS mp ON mp.userId = u.id
+    WHERE date(mp.startDate) <= date(?)
+    AND date(mp.endDate) >= date(?);
+  `, [dateStr, dateStr]);
 };
 
 export const getLowTokenUsers = () => {
@@ -404,12 +418,15 @@ export const getNotMarkedUsers = (dateStr, mealType) => {
   return selectQuery(`
     SELECT u.name
     FROM USERS u
-    WHERE u.id NOT IN (
+    INNER JOIN MEAL_PLANS mp ON mp.userId = u.id
+    WHERE date(mp.startDate) <= date(?)
+    AND date(mp.endDate) >= date(?)
+    AND u.id NOT IN (
       SELECT userId FROM ATTENDANCE 
       WHERE date = ? AND mealType = ?
     )
     ORDER BY u.name ASC;
-  `, [dateStr, mealType]);
+  `, [dateStr, dateStr, dateStr, mealType]);
 };
 
 export const getAllPlans = () => {

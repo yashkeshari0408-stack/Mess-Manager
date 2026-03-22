@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../context/ThemeContext';
 import { getTokensByUser, getUserById } from '../db/database';
 
 const formatDate = (dateStr) => {
@@ -21,20 +22,21 @@ const isTokenActive = (endDate) => {
   return endDate >= today;
 };
 
-const getMealTypeStyle = (mealType) => {
+const getMealTypeStyle = (mealType, theme) => {
   switch(mealType?.toLowerCase()) {
     case 'breakfast':
       return { bg: '#fff3e0', color: '#ff9800' };
     case 'lunch':
       return { bg: '#e8f5e9', color: '#4caf50' };
     case 'dinner':
-      return { bg: '#E8EAF6', color: '#1A237E' };
+      return { bg: theme.primaryLight, color: theme.primary };
     default:
       return { bg: '#f5f5f5', color: '#9e9e9e' };
   }
 };
 
 export default function TokenListScreen() {
+  const { theme } = useTheme();
   const navigation = useNavigation();
   const route = useRoute();
   const userId = route.params?.userId;
@@ -64,7 +66,7 @@ export default function TokenListScreen() {
   };
 
   const renderToken = ({ item, index }) => {
-    const mealStyle = getMealTypeStyle(item.mealType);
+    const mealStyle = getMealTypeStyle(item.mealType, theme);
     const active = isTokenActive(item.endDate);
 
     return (
@@ -109,17 +111,17 @@ export default function TokenListScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: theme.headerBg }]}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
           style={styles.backButton}
         >
-          <Ionicons name="arrow-back" size={24} color="#e91e63" />
+          <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
         <View>
-          <Text style={styles.headerTitle}>Token History</Text>
+          <Text style={[styles.headerTitle, { color: '#fff' }]}>Token History</Text>
           {user && (
-            <Text style={styles.headerSubtitle}>{user.name}</Text>
+            <Text style={[styles.headerSubtitle, { color: '#fff' }]}>{user.name}</Text>
           )}
         </View>
       </View>
@@ -127,7 +129,7 @@ export default function TokenListScreen() {
       {loading ? (
         <ActivityIndicator 
           style={{ marginTop: 40 }} 
-          color="#e91e63" 
+          color={theme.primary}
           size="large"
         />
       ) : (
@@ -158,7 +160,6 @@ export default function TokenListScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fafafa' },
   header: {
-    backgroundColor: '#1A237E',
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
@@ -168,12 +169,10 @@ const styles = StyleSheet.create({
   backButton: { marginRight: 12 },
   headerTitle: {
     fontSize: 20,
-    fontWeight: '700',
-    color: '#1A237E'
+    fontWeight: '700'
   },
   headerSubtitle: {
     fontSize: 13,
-    color: '#1A237E',
     opacity: 0.8,
     marginTop: 2
   },

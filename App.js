@@ -6,6 +6,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 
 import { initDatabase } from './src/db/database';
+import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 
 import TodayStatusScreen from './src/screens/TodayStatusScreen';
 import UserListScreen from './src/screens/UserListScreen';
@@ -22,6 +23,8 @@ const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
 function TabNavigator() {
+  const { theme } = useTheme();
+  
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -40,12 +43,12 @@ function TabNavigator() {
           }
           return <IconComponent name={iconName} size={size} color={color} />;
         },
-        tabBarActiveTintColor: '#3949AB',
+        tabBarActiveTintColor: theme.tabActive,
         tabBarInactiveTintColor: '#9E9E9E',
         tabBarStyle: {
           backgroundColor: '#FFFFFF',
           borderTopWidth: 0,
-          shadowColor: '#1A237E',
+          shadowColor: theme.primary,
           shadowOffset: { width: 0, height: -4 },
           shadowOpacity: 0.08,
           shadowRadius: 12,
@@ -105,45 +108,47 @@ export default function App() {
   }
 
   return (
-    <NavigationContainer>
-      <Stack.Navigator
-        initialRouteName="MainTabs"
-        screenOptions={{
-          headerTitleAlign: 'center'
-        }}
-      >
-        <Stack.Screen
-          name="MainTabs"
-          component={TabNavigator}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="TodayStatus"
-          component={TodayStatusScreen}
-          options={{ title: 'Today Status' }}
-        />
-        <Stack.Screen
-          name="UserList"
-          component={UserListScreen}
-          options={{ title: 'Users' }}
-        />
-        <Stack.Screen
-          name="AddEditUser"
-          component={AddEditUserScreen}
-          options={{ title: 'User Details' }}
-        />
-        <Stack.Screen
-          name="TokenList"
-          component={TokenListScreen}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="AddToken"
-          component={AddTokenScreen}
-          options={{ title: 'Add Token' }}
-        />
-      </Stack.Navigator>
-    </NavigationContainer>
+    <ThemeProvider>
+      <NavigationContainer>
+        <Stack.Navigator
+          initialRouteName="MainTabs"
+          screenOptions={{
+            headerTitleAlign: 'center'
+          }}
+        >
+          <Stack.Screen
+            name="MainTabs"
+            component={TabNavigator}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="TodayStatus"
+            component={TodayStatusScreen}
+            options={{ title: 'Today Status' }}
+          />
+          <Stack.Screen
+            name="UserList"
+            component={UserListScreen}
+            options={{ title: 'Users' }}
+          />
+          <Stack.Screen
+            name="AddEditUser"
+            component={AddEditUserScreen}
+            options={{ title: 'User Details' }}
+          />
+          <Stack.Screen
+            name="TokenList"
+            component={TokenListScreen}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="AddToken"
+            component={AddTokenScreen}
+            options={{ title: 'Add Token' }}
+          />
+        </Stack.Navigator>
+      </NavigationContainer>
+    </ThemeProvider>
   );
 }
 

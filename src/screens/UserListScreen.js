@@ -15,9 +15,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useTheme } from '../context/ThemeContext';
 import { getUsersWithTokenInfo, deleteUser, getUserAttendanceExceptions } from '../db/database';
 
-function UserCard({ user, onTap, onDelete }) {
+function UserCard({ user, onTap, onDelete, theme }) {
   const initial = user.name.charAt(0).toUpperCase();
 
   const getExpiryColor = (daysLeft, tokensRemaining) => {
@@ -64,8 +65,8 @@ function UserCard({ user, onTap, onDelete }) {
     >
       <View style={styles.cardContent}>
         <View style={styles.topSection}>
-          <View style={[styles.avatar, { backgroundColor: '#1A237E' }]}>
-            <Text style={[styles.avatarText, { color: '#ec407a' }]}>{initial}</Text>
+          <View style={[styles.avatar, { backgroundColor: theme.avatarBg }]}>
+            <Text style={[styles.avatarText, { color: theme.avatarText }]}>{initial}</Text>
           </View>
           <View style={styles.userInfo}>
             <Text style={styles.userName}>{user.name}</Text>
@@ -90,6 +91,7 @@ function UserCard({ user, onTap, onDelete }) {
 }
 
 export default function UserListScreen() {
+  const { theme } = useTheme();
   const navigation = useNavigation();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -214,14 +216,14 @@ export default function UserListScreen() {
   );
 
   const renderItem = ({ item }) => (
-    <UserCard user={item} onTap={openUserDetail} onDelete={handleDelete} />
+    <UserCard user={item} onTap={openUserDetail} onDelete={handleDelete} theme={theme} />
   );
 
   const activeCount = users.length > 0 ? getActiveCount() : 0;
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: theme.headerBg }]}>
         <View>
           <Text style={styles.headerTitle}>Users</Text>
           <Text style={styles.headerSubtitle}>
@@ -229,7 +231,7 @@ export default function UserListScreen() {
           </Text>
         </View>
         <TouchableOpacity style={styles.headerIcon} onPress={() => navigation.navigate('AddEditUser')}>
-          <Ionicons name="person-add-outline" size={22} color="#00897B" />
+          <Ionicons name="person-add-outline" size={22} color={theme.primary} />
         </TouchableOpacity>
       </View>
 
@@ -251,7 +253,7 @@ export default function UserListScreen() {
 
       {loading && users.length === 0 ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#00897B" />
+          <ActivityIndicator size="large" color={theme.primary} />
         </View>
       ) : users.length === 0 ? (
         renderEmptyState()
@@ -284,8 +286,8 @@ export default function UserListScreen() {
             
             <View style={styles.modalHeader}>
               <View style={styles.modalUserInfo}>
-                <View style={[styles.modalAvatar, { backgroundColor: '#E8EAF6' }]}>
-                  <Text style={[styles.modalAvatarText, { color: '#ec407a' }]}>
+                <View style={[styles.modalAvatar, { backgroundColor: theme.avatarBg }]}>
+                  <Text style={[styles.modalAvatarText, { color: theme.avatarText }]}>
                     {selectedUser?.name?.charAt(0).toUpperCase()}
                   </Text>
                 </View>
@@ -306,8 +308,8 @@ export default function UserListScreen() {
             <View style={styles.modalPlanRow}>
               {selectedUser?.planName && (
                 <View style={styles.planPill}>
-                  <Ionicons name="restaurant-outline" size={13} color="#00897B" />
-                  <Text style={[styles.planPillText, styles.planNameText]}>{selectedUser.planName}</Text>
+                  <Ionicons name="restaurant-outline" size={13} color={theme.primary} />
+                  <Text style={[styles.planPillText, styles.planNameText, { color: theme.primary }]}>{selectedUser.planName}</Text>
                 </View>
               )}
               <View style={styles.planPill}>
@@ -324,7 +326,7 @@ export default function UserListScreen() {
               <Text style={styles.exceptionsLabel}>Absent & Home History</Text>
               
               {exceptionsLoading ? (
-                <ActivityIndicator size="small" color="#00897B" style={styles.exceptionsLoading} />
+                <ActivityIndicator size="small" color={theme.primary} style={styles.exceptionsLoading} />
               ) : exceptions.length === 0 ? (
                 <View style={styles.noExceptionsContainer}>
                   <Ionicons name="checkmark-circle-outline" size={32} color="#4caf50" />
@@ -362,14 +364,14 @@ export default function UserListScreen() {
             </View>
 
             <TouchableOpacity
-              style={styles.editButton}
+              style={[styles.editButton, { backgroundColor: theme.selectedBg }]}
               onPress={() => {
                 setShowModal(false);
                 navigation.navigate('AddEditUser', { userId: selectedUser?.id });
               }}
             >
-              <Ionicons name="create-outline" size={18} color="#00897B" />
-              <Text style={styles.editButtonText}>Edit User Details</Text>
+              <Ionicons name="create-outline" size={18} color={theme.primary} />
+              <Text style={[styles.editButtonText, { color: theme.primary }]}>Edit User Details</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -384,7 +386,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#fafafa'
   },
   header: {
-    backgroundColor: '#1A237E',
     paddingHorizontal: 20,
     paddingTop: 40,
     paddingBottom: 16,
@@ -592,7 +593,6 @@ const styles = StyleSheet.create({
     alignItems: 'center'
   },
   planNameText: {
-    color: '#ec407a',
     fontWeight: '600'
   },
   planPillText: {
@@ -669,7 +669,6 @@ const styles = StyleSheet.create({
   editButton: {
     marginHorizontal: 20,
     marginTop: 16,
-    backgroundColor: '#E8EAF6',
     borderRadius: 12,
     paddingVertical: 14,
     flexDirection: 'row',
@@ -679,7 +678,6 @@ const styles = StyleSheet.create({
   editButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#ec407a',
     marginLeft: 8
   }
 });

@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { useTheme } from '../context/ThemeContext';
 import {
   getUsersWithMealPlans,
   getAllPlans,
@@ -26,6 +27,17 @@ const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 function toDateString(date) {
   return date.toISOString().split('T')[0];
+}
+
+function formatDisplayDate(date) {
+  return date.toLocaleDateString('en-US', { 
+    month: 'short', day: 'numeric', year: 'numeric' 
+  });
+}
+
+function normalizeDate(dateStr) {
+  if (!dateStr) return null;
+  return dateStr.substring(0, 10);
 }
 
 function formatDate(date) {
@@ -43,9 +55,54 @@ function getDefaultMealForDate(date) {
   return isWeekendDate(date) ? 'Lunch' : 'Dinner';
 }
 
-function UserCard({ user, status, onMark }) {
+function UserCard({ user, status, onMark, selectedDate, theme }) {
   const currentStatus = status || null;
   const showTokenDeduction = currentStatus === 'Present' || currentStatus === 'Absent';
+
+  const selectedDateStr = toDateString(selectedDate);
+  const planStartDate = normalizeDate(user.startDate);
+  const normalizedSelectedDate = selectedDateStr.substring(0, 10);
+
+  if (planStartDate && normalizedSelectedDate < planStartDate) {
+    return (
+      <View style={styles.card}>
+        <View style={styles.cardTop}>
+          <View style={[styles.avatar, { backgroundColor: theme.avatarBg }]}>
+            <Text style={[styles.avatarText, { color: theme.avatarText }]}>
+              {user.name.charAt(0).toUpperCase()}
+            </Text>
+          </View>
+          <View style={styles.userInfo}>
+            <Text style={styles.userName}>{user.name}</Text>
+            <Text style={{ 
+              fontSize: 12, 
+              color: '#ff9800', 
+              marginTop: 2 
+            }}>
+              Plan starts on {formatDisplayDate(new Date(user.startDate))}
+            </Text>
+          </View>
+        </View>
+        <View style={{
+          backgroundColor: '#FFF8E1',
+          borderRadius: 8,
+          padding: 10,
+          flexDirection: 'row',
+          alignItems: 'center'
+        }}>
+          <Ionicons 
+            name="information-circle-outline" 
+            size={14} 
+            color="#ff9800" 
+            style={{ marginRight: 6 }}
+          />
+          <Text style={{ fontSize: 12, color: '#ff9800' }}>
+            Cannot mark attendance before plan start date
+          </Text>
+        </View>
+      </View>
+    );
+  }
 
   const isPlanUnavailable = !user.endDate 
     || user.daysLeft < 0 
@@ -66,8 +123,8 @@ function UserCard({ user, status, onMark }) {
     return (
       <View style={styles.card}>
         <View style={styles.cardTop}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>
+          <View style={[styles.avatar, { backgroundColor: theme.avatarBg }]}>
+            <Text style={[styles.avatarText, { color: theme.avatarText }]}>
               {user.name.charAt(0).toUpperCase()}
             </Text>
           </View>
@@ -117,8 +174,8 @@ function UserCard({ user, status, onMark }) {
   return (
     <View style={styles.card}>
       <View style={styles.cardTop}>
-        <View style={[styles.avatar, { backgroundColor: '#E8EAF6' }]}>
-          <Text style={styles.avatarText}>{user.name.charAt(0).toUpperCase()}</Text>
+        <View style={[styles.avatar, { backgroundColor: theme.avatarBg }]}>
+          <Text style={[styles.avatarText, { color: theme.avatarText }]}>{user.name.charAt(0).toUpperCase()}</Text>
         </View>
         <View style={styles.userInfo}>
           <Text style={styles.userName}>{user.name}</Text>
@@ -159,6 +216,7 @@ function UserCard({ user, status, onMark }) {
 }
 
 export default function AttendanceScreen() {
+  const { theme } = useTheme();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [mealType, setMealType] = useState(
     isWeekendDate(new Date()) ? 'Lunch' : 'Dinner'
@@ -273,7 +331,7 @@ export default function AttendanceScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: theme.headerBg }]}>
         <Text style={styles.headerTitle}>Mark Attendance</Text>
         <Text style={styles.headerSubtitle}>Bulk attendance marking.</Text>
       </View>
@@ -325,26 +383,26 @@ export default function AttendanceScreen() {
         {isWeekendDate(selectedDate) ? (
           <View style={styles.mealToggle}>
             <TouchableOpacity
-              style={[styles.mealPill, mealType === 'Lunch' && styles.mealPillActive]}
+              style={[styles.mealPill, mealType === 'Lunch' && { backgroundColor: theme.buttonBg, borderColor: theme.buttonBg }]}
               onPress={() => changeMeal('Lunch')}
             >
-              <Text style={[styles.mealPillText, mealType === 'Lunch' && styles.mealPillTextActive]}>
+              <Text style={[styles.mealPillText, mealType === 'Lunch' && { color: '#fff' }]}>
                 Lunch
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.mealPill, mealType === 'Dinner' && styles.mealPillActive]}
+              style={[styles.mealPill, mealType === 'Dinner' && { backgroundColor: theme.buttonBg, borderColor: theme.buttonBg }]}
               onPress={() => changeMeal('Dinner')}
             >
-              <Text style={[styles.mealPillText, mealType === 'Dinner' && styles.mealPillTextActive]}>
+              <Text style={[styles.mealPillText, mealType === 'Dinner' && { color: '#fff' }]}>
                 Dinner
               </Text>
             </TouchableOpacity>
           </View>
         ) : (
           <View style={styles.mealToggle}>
-            <View style={[styles.mealPill, styles.mealPillActive]}>
-              <Text style={[styles.mealPillText, styles.mealPillTextActive]}>
+            <View style={[styles.mealPill, { backgroundColor: theme.buttonBg, borderColor: theme.buttonBg }]}>
+              <Text style={[styles.mealPillText, { color: '#fff' }]}>
                 Dinner
               </Text>
             </View>
@@ -358,7 +416,7 @@ export default function AttendanceScreen() {
 
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#ec407a" />
+          <ActivityIndicator size="large" color={theme.primary} />
         </View>
       ) : users.length === 0 ? (
         <View style={styles.emptyContainer}>
@@ -375,6 +433,8 @@ export default function AttendanceScreen() {
               user={item}
               status={attendance[item.id] || null}
               onMark={handleMark}
+              selectedDate={selectedDate}
+              theme={theme}
             />
           )}
           contentContainerStyle={styles.listContent}
@@ -391,7 +451,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#fafafa'
   },
   header: {
-    backgroundColor: '#1A237E',
     paddingHorizontal: 20,
     paddingTop: 40,
     paddingBottom: 16
@@ -526,8 +585,7 @@ const styles = StyleSheet.create({
   },
   avatarText: {
     fontSize: 18,
-    fontWeight: '700',
-    color: '#1A237E'
+    fontWeight: '700'
   },
   userInfo: {
     marginLeft: 12,

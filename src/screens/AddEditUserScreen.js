@@ -12,6 +12,7 @@ import {
 import { useNavigation, useRoute } from '@react-navigation/native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../context/ThemeContext';
 import { createUser, getUserById, updateUser, updateUserMealPlan, getAllPlans } from '../db/database';
 
 const formatDisplayDate = (date) => {
@@ -21,6 +22,7 @@ const formatDisplayDate = (date) => {
 };
 
 export default function AddEditUserScreen() {
+  const { theme } = useTheme();
   const route = useRoute();
   const navigation = useNavigation();
   const editingUserId = route.params?.userId ?? null;
@@ -118,13 +120,17 @@ export default function AddEditUserScreen() {
         <TouchableOpacity 
           key={plan.id} 
           onPress={() => setSelectedPlanId(plan.id)}
-          style={styles.radioRow}
+          style={[
+            styles.radioRow,
+            selectedPlanId === plan.id && { borderColor: theme.selectedBorder, backgroundColor: theme.selectedBg }
+          ]}
         >
           <View style={[
             styles.radio, 
-            selectedPlanId === plan.id && styles.radioSelected
+            selectedPlanId === plan.id && styles.radioSelected,
+            selectedPlanId === plan.id && { borderColor: theme.selectedBorder }
           ]}>
-            {selectedPlanId === plan.id && <View style={styles.radioDot} />}
+            {selectedPlanId === plan.id && <View style={[styles.radioDot, { backgroundColor: theme.primary }]} />}
           </View>
           <View>
             <Text style={styles.radioLabel}>{plan.name}</Text>
@@ -165,7 +171,7 @@ export default function AddEditUserScreen() {
         numberOfLines={3}
       />
 
-      <TouchableOpacity style={styles.button} onPress={onSave}>
+      <TouchableOpacity style={[styles.button, { backgroundColor: theme.buttonBg }]} onPress={onSave}>
         <Text style={styles.buttonText}>
           {editingUserId ? 'Update User' : 'Save User'}
         </Text>
@@ -259,7 +265,6 @@ const styles = StyleSheet.create({
   },
   button: {
     marginTop: 24,
-    backgroundColor: '#1A237E',
     paddingVertical: 14,
     borderRadius: 10,
     alignItems: 'center',

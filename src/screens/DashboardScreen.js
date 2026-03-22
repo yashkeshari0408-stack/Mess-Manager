@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,11 +6,13 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
-  Image
+  Image,
+  RefreshControl
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useTheme } from '../context/ThemeContext';
 import {
   getTodayAttendanceSummary,
   getTotalActiveUsers,
@@ -39,7 +41,8 @@ const isToday = (date) => {
 
 const getTodayMealType = () => {
   const day = new Date().getDay();
-  return (day === 0 || day === 6) ? 'Lunch' : 'Dinner';
+  const isWeekend = day === 0 || day === 6;
+  return isWeekend ? 'Lunch & Dinner' : 'Dinner';
 };
 
 const formatDisplayDate = (date) => {
@@ -55,6 +58,7 @@ const formatLastMarkedTime = (createdAt) => {
 };
 
 export default function DashboardScreen() {
+  const { theme } = useTheme();
   const navigation = useNavigation();
   const [loading, setLoading] = useState(true);
   const [viewDate, setViewDate] = useState(new Date());
@@ -69,47 +73,69 @@ export default function DashboardScreen() {
   const [expiredPlanUsers, setExpiredPlanUsers] = useState([]);
   const [lastMarkedInfo, setLastMarkedInfo] = useState(null);
   const [notMarkedUsers, setNotMarkedUsers] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
+  const [dashMealType, setDashMealType] = useState(
+    new Date().getDay() === 0 || new Date().getDay() === 6 ? 'Lunch' : 'Dinner'
+  );
 
-  const loadAllData = useCallback(async (dateStr, meal) => {
+  const loadAllData = async (dateStr, meal) => {
     setLoading(true);
     try {
-      const [summary, total, lowTokens, expiring, lastMarked, notMarked, expired] = 
+      const [summary, total, lowTokens, expiring,
+             lastMarked, notMarked, expired] =
         await Promise.all([
           getTodayAttendanceSummary(dateStr, meal),
-          getTotalActiveUsers(),
+          getTotalActiveUsers(dateStr),
           getLowTokenUsers(),
           getExpiringSoonUsers(dateStr),
           getLastAttendanceMarkedInfo(),
           getNotMarkedUsers(dateStr, meal),
           getExpiredPlanUsers(dateStr)
         ]);
-      
+
       const s = summary[0] || {};
       setPresentCount(s.presentCount || 0);
       setAbsentCount(s.absentCount || 0);
       setHomeCount(s.homeCount || 0);
       setMarkedCount(s.markedCount || 0);
       setTotalUsers(total[0]?.total || 0);
-      setLowTokenUsers(lowTokens);
-      setExpiringSoonUsers(expiring);
-      setExpiredPlanUsers(expired);
+      setLowTokenUsers(lowTokens || []);
+      setExpiringSoonUsers(expiring || []);
       setLastMarkedInfo(lastMarked[0] || null);
-      setNotMarkedUsers(notMarked);
-      console.log('Dashboard loaded:', dateStr, meal, s);
+      setNotMarkedUsers(notMarked || []);
+      setExpiredPlanUsers(expired || []);
     } catch(e) {
       console.log('Dashboard loadAllData error:', e);
     } finally {
       setLoading(false);
     }
-  }, []);
+  };
 
   useFocusEffect(
     useCallback(() => {
       const today = new Date();
+      const todayStr = toDateString(today);
+      const day = today.getDay();
+      const isWeekend = day === 0 || day === 6;
+      const meal = isWeekend ? 'Lunch' : 'Dinner';
       setViewDate(today);
-      loadAllData(toDateString(today), getTodayMealType());
+      setDashMealType(meal);
+      loadAllData(todayStr, meal);
+      
+      return () => {};
     }, [])
   );
+
+  useEffect(() => {
+    const dateStr = toDateString(viewDate);
+    loadAllData(dateStr, dashMealType);
+  }, [dashMealType]);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await loadAllData(toDateString(viewDate), dashMealType);
+    setRefreshing(false);
+  };
 
   const handlePrevDay = () => {
     const newDate = new Date(viewDate);
@@ -117,7 +143,8 @@ export default function DashboardScreen() {
     setViewDate(newDate);
     const dateStr = newDate.toISOString().split('T')[0];
     setViewDateStr(dateStr);
-    const meal = getTodayMealType();
+    const meal = getMealTypeForDate(newDate);
+    setDashMealType(meal);
     loadAllData(dateStr, meal);
   };
 
@@ -132,11 +159,17 @@ export default function DashboardScreen() {
     setViewDate(newDate);
     const dateStr = newDate.toISOString().split('T')[0];
     setViewDateStr(dateStr);
-    const meal = getTodayMealType();
+    const meal = getMealTypeForDate(newDate);
+    setDashMealType(meal);
     loadAllData(dateStr, meal);
   };
 
   const isTodayViewed = isToday(viewDate);
+
+  const isViewDateWeekend = () => {
+    const day = new Date(viewDate).getDay();
+    return day === 0 || day === 6;
+  };
 
   const getMealContext = () => {
     const day = viewDate.getDay();
@@ -147,6 +180,18 @@ export default function DashboardScreen() {
   const getMealBadgeText = () => {
     const day = viewDate.getDay();
     return (day === 0 || day === 6) ? 'Lunch & Dinner' : 'Dinner';
+  };
+
+  const getMealTitle = () => {
+    const day = viewDate.getDay();
+    const isWeekend = day === 0 || day === 6;
+    return isWeekend ? 'Lunch & Dinner Attendance' : 'Dinner Attendance';
+  };
+
+  const getMealTypeForDate = (date) => {
+    const day = date.getDay();
+    const isWeekend = day === 0 || day === 6;
+    return isWeekend ? 'Lunch' : 'Dinner';
   };
 
   const notMarkedCount = Math.max(0, totalUsers - markedCount);
@@ -257,12 +302,12 @@ export default function DashboardScreen() {
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
+        <View style={[styles.header, { backgroundColor: theme.headerBg }]}>
           <Image source={require('../../assets/icon.png')} style={styles.headerIcon} />
           <Text style={styles.headerTitle}>Suparna's Kitchen</Text>
         </View>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#00897B" />
+          <ActivityIndicator size="large" color={theme.primary} />
         </View>
       </SafeAreaView>
     );
@@ -270,12 +315,23 @@ export default function DashboardScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: theme.headerBg }]}>
         <Image source={require('../../assets/icon.png')} style={styles.headerIcon} />
         <Text style={styles.headerTitle}>Suparna's Kitchen</Text>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent} 
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            colors={[theme.primary]}
+            tintColor={theme.primary}
+          />
+        }
+      >
         <View style={{
           flexDirection: 'row',
           alignItems: 'center',
@@ -292,7 +348,9 @@ export default function DashboardScreen() {
                 const newDate = new Date(viewDate);
                 newDate.setDate(newDate.getDate() - 1);
                 setViewDate(newDate);
-                loadAllData(toDateString(newDate), getTodayMealType());
+                const meal = getMealTypeForDate(newDate);
+                setDashMealType(meal);
+                loadAllData(toDateString(newDate), meal);
               }}
               style={{ padding: 4, marginRight: 8 }}
             >
@@ -315,7 +373,9 @@ export default function DashboardScreen() {
                 newDate.setHours(0, 0, 0, 0);
                 if (newDate > today) return;
                 setViewDate(newDate);
-                loadAllData(toDateString(newDate), getTodayMealType());
+                const meal = getMealTypeForDate(newDate);
+                setDashMealType(meal);
+                loadAllData(toDateString(newDate), meal);
               }}
               style={{ 
                 padding: 4, 
@@ -329,19 +389,69 @@ export default function DashboardScreen() {
           </View>
 
           <View style={{
-            backgroundColor: '#E8EAF6',
+            backgroundColor: theme.primaryLight,
             paddingHorizontal: 10,
             paddingVertical: 4,
-            borderRadius: 20
+            borderRadius: 20,
+            marginRight: 8
           }}>
-            <Text style={{ fontSize: 12, color: '#1A237E', fontWeight: '600' }}>
-              {getTodayMealType()}
+            <Text style={{ fontSize: 12, color: theme.primary, fontWeight: '600' }}>
+              {getMealBadgeText()}
             </Text>
           </View>
+
+          <TouchableOpacity
+            onPress={handleRefresh}
+            style={{ padding: 4 }}
+          >
+            <Ionicons 
+              name={refreshing ? "sync" : "refresh-outline"}
+              size={18} 
+              color={theme.primary}
+              style={refreshing ? { 
+                transform: [{ rotate: '45deg' }] 
+              } : {}}
+            />
+          </TouchableOpacity>
         </View>
 
+        {isViewDateWeekend() && (
+          <View style={{
+            flexDirection: 'row',
+            marginHorizontal: 16,
+            marginTop: 12,
+            backgroundColor: theme.primaryLight,
+            borderRadius: 30,
+            padding: 4
+          }}>
+            {['Lunch', 'Dinner'].map(meal => (
+              <TouchableOpacity
+                key={meal}
+                style={[{
+                  flex: 1,
+                  paddingVertical: 10,
+                  borderRadius: 26,
+                  alignItems: 'center'
+                }, dashMealType === meal && {
+                  backgroundColor: theme.primary,
+                  elevation: 4
+                }]}
+                onPress={() => setDashMealType(meal)}
+              >
+                <Text style={{
+                  fontSize: 14,
+                  fontWeight: '700',
+                  color: dashMealType === meal ? '#fff' : '#6B7280'
+                }}>
+                  {meal}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
         <View style={styles.sectionContainer}>
-          <Text style={styles.sectionTitle}>{isTodayViewed ? `${getTodayMealType()} Attendance` : `${getTodayMealType()} Attendance — ${formatDisplayDate(viewDate)}`}</Text>
+          <Text style={styles.sectionTitle}>{isTodayViewed ? getMealTitle() : `${getMealTitle()} — ${formatDisplayDate(viewDate)}`}</Text>
           <View style={styles.statsCard}>
             <View style={styles.statsRow}>
               <View style={styles.statCell}>
@@ -387,16 +497,28 @@ export default function DashboardScreen() {
         )}
 
         <TouchableOpacity
-          style={[styles.markButton, notMarkedCount === 0 && totalUsers > 0 && styles.markButtonComplete]}
+          style={[
+            styles.markButton,
+            notMarkedCount === 0 && totalUsers > 0 && {
+              backgroundColor: theme.primary,
+              borderColor: theme.primary,
+              borderWidth: 1
+            }
+          ]}
           onPress={() => navigation.navigate('Attendance')}
           testID="mark-attendance-button"
         >
           <Ionicons 
             name={notMarkedCount === 0 && totalUsers > 0 ? "checkmark-circle" : "calendar-outline"} 
             size={20} 
-            color="#fff" 
+            color={notMarkedCount === 0 && totalUsers > 0 ? '#fff' : '#fff'} 
           />
-          <Text style={styles.markButtonText}>
+          <Text style={[
+            styles.markButtonText,
+            notMarkedCount === 0 && totalUsers > 0 && {
+              color: '#fff'
+            }
+          ]}>
             {notMarkedCount === 0 && totalUsers > 0 ? 'All Attendance Marked' : 'Mark Today Attendance'}
           </Text>
         </TouchableOpacity>
@@ -448,7 +570,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#fafafa'
   },
   header: {
-    backgroundColor: '#1A237E',
     paddingHorizontal: 20,
     paddingTop: 40,
     paddingBottom: 16,

@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
+import { useTheme, THEMES } from '../context/ThemeContext';
 import {
   getAllPlans,
   createPlan,
@@ -24,6 +25,7 @@ import {
 } from '../db/database';
 
 export default function SettingsScreen() {
+  const { theme, switchTheme } = useTheme();
   const [loading, setLoading] = useState(true);
   const [plans, setPlans] = useState([]);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -167,12 +169,12 @@ export default function SettingsScreen() {
   };
 
   const renderPlanCard = (plan) => (
-    <View key={plan.id} style={[styles.planCard, plan.isDefault ? styles.planCardDefault : null]}>
+    <View key={plan.id} style={[styles.planCard, plan.isDefault && { borderColor: theme.selectedBorder }]}>
       <View style={styles.planCardRow1}>
         <Text style={styles.planName}>{plan.name}</Text>
         {plan.isDefault === 1 && (
-          <View style={styles.defaultBadge}>
-            <Text style={styles.defaultBadgeText}>Default</Text>
+          <View style={[styles.defaultBadge, { backgroundColor: theme.selectedBg }]}>
+            <Text style={[styles.defaultBadgeText, { color: theme.primary }]}>Default</Text>
           </View>
         )}
       </View>
@@ -183,10 +185,10 @@ export default function SettingsScreen() {
       <View style={styles.planCardRow3}>
         {!plan.isDefault && (
           <TouchableOpacity
-            style={styles.setDefaultButton}
+            style={[styles.setDefaultButton, { borderColor: theme.primary }]}
             onPress={() => handleSetDefault(plan.id)}
           >
-            <Text style={styles.setDefaultText}>Set as Default</Text>
+            <Text style={[styles.setDefaultText, { color: theme.primary }]}>Set as Default</Text>
           </TouchableOpacity>
         )}
         <TouchableOpacity
@@ -259,7 +261,7 @@ export default function SettingsScreen() {
               style={styles.checkboxRow}
               onPress={() => setIsDefaultChecked(!isDefaultChecked)}
             >
-              <View style={[styles.checkbox, isDefaultChecked && styles.checkboxChecked]}>
+              <View style={[styles.checkbox, isDefaultChecked && { backgroundColor: theme.buttonBg, borderColor: theme.buttonBg }]}>
                 {isDefaultChecked && <Ionicons name="checkmark" size={14} color="#fff" />}
               </View>
               <Text style={styles.checkboxLabel}>Set as default plan</Text>
@@ -274,7 +276,7 @@ export default function SettingsScreen() {
               <Text style={styles.cancelButtonText}>Cancel</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={styles.saveButton}
+              style={[styles.saveButton, { backgroundColor: theme.buttonBg }]}
               onPress={isEdit ? handleSaveEdit : handleSaveAdd}
             >
               <Text style={styles.saveButtonText}>Save</Text>
@@ -288,12 +290,12 @@ export default function SettingsScreen() {
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
+        <View style={[styles.header, { backgroundColor: theme.headerBg }]}>
           <Text style={styles.headerTitle}>Settings</Text>
           <Text style={styles.headerSubtitle}>Manage meal plans & app config</Text>
         </View>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#ec407a" />
+          <ActivityIndicator size="large" color={theme.primary} />
         </View>
       </SafeAreaView>
     );
@@ -301,7 +303,7 @@ export default function SettingsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: theme.headerBg }]}>
         <Text style={styles.headerTitle}>Settings</Text>
         <Text style={styles.headerSubtitle}>Manage meal plans & app config</Text>
       </View>
@@ -310,7 +312,7 @@ export default function SettingsScreen() {
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Meal Plans</Text>
           <TouchableOpacity onPress={handleOpenAddModal} testID="add-plan-button">
-            <Ionicons name="add-circle-outline" size={24} color="#ec407a" />
+            <Ionicons name="add-circle-outline" size={24} color={theme.primary} />
           </TouchableOpacity>
         </View>
 
@@ -318,6 +320,138 @@ export default function SettingsScreen() {
 
         {renderModal(false)}
         {renderModal(true)}
+
+        <View style={{
+          marginHorizontal: 16,
+          marginTop: 32,
+          marginBottom: 8
+        }}>
+          <Text style={{
+            fontSize: 15,
+            fontWeight: '700',
+            color: '#212121',
+            marginBottom: 12
+          }}>
+            App Theme
+          </Text>
+
+          <View style={{
+            backgroundColor: '#fff',
+            borderRadius: 12,
+            borderWidth: 1,
+            borderColor: '#f0f0f0',
+            padding: 16
+          }}>
+            <Text style={{
+              fontSize: 13,
+              color: '#9e9e9e',
+              marginBottom: 16
+            }}>
+              Choose your preferred color theme
+            </Text>
+
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              
+              <TouchableOpacity
+                style={{
+                  flex: 1,
+                  borderRadius: 12,
+                  borderWidth: 2,
+                  borderColor: theme.name === 'green' 
+                    ? '#00897B' : '#f0f0f0',
+                  backgroundColor: theme.name === 'green'
+                    ? '#E0F2F1' : '#fff',
+                  padding: 16,
+                  alignItems: 'center'
+                }}
+                onPress={() => switchTheme('green')}
+              >
+                <View style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 20,
+                  backgroundColor: '#00897B',
+                  marginBottom: 8,
+                  justifyContent: 'center',
+                  alignItems: 'center'
+                }}>
+                  {theme.name === 'green' && (
+                    <Ionicons name="checkmark" size={20} color="#fff" />
+                  )}
+                </View>
+                <Text style={{
+                  fontSize: 13,
+                  fontWeight: '700',
+                  color: theme.name === 'green' 
+                    ? '#00897B' : '#212121'
+                }}>
+                  Forest
+                </Text>
+                <Text style={{
+                  fontSize: 11,
+                  color: '#9e9e9e',
+                  marginTop: 2
+                }}>
+                  Teal green
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={{
+                  flex: 1,
+                  borderRadius: 12,
+                  borderWidth: 2,
+                  borderColor: theme.name === 'pink'
+                    ? '#FF8DA1' : '#f0f0f0',
+                  backgroundColor: theme.name === 'pink'
+                    ? '#FFEEF1' : '#fff',
+                  padding: 16,
+                  alignItems: 'center'
+                }}
+                onPress={() => switchTheme('pink')}
+              >
+                <View style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 20,
+                  backgroundColor: '#FF8DA1',
+                  marginBottom: 8,
+                  justifyContent: 'center',
+                  alignItems: 'center'
+                }}>
+                  {theme.name === 'pink' && (
+                    <Ionicons name="checkmark" size={20} color="#fff" />
+                  )}
+                </View>
+                <Text style={{
+                  fontSize: 13,
+                  fontWeight: '700',
+                  color: theme.name === 'pink'
+                    ? '#FF8DA1' : '#212121'
+                }}>
+                  Blossom
+                </Text>
+                <Text style={{
+                  fontSize: 11,
+                  color: '#9e9e9e',
+                  marginTop: 2
+                }}>
+                  Soft pink
+                </Text>
+              </TouchableOpacity>
+
+            </View>
+
+            <Text style={{
+              fontSize: 11,
+              color: '#bdbdbd',
+              textAlign: 'center',
+              marginTop: 12
+            }}>
+              Theme is saved automatically
+            </Text>
+          </View>
+        </View>
 
         <View style={{
           marginHorizontal: 16,
@@ -349,7 +483,7 @@ export default function SettingsScreen() {
                 width: 48,
                 height: 48,
                 borderRadius: 24,
-                backgroundColor: '#E8EAF6',
+                backgroundColor: theme.primaryLight,
                 justifyContent: 'center',
                 alignItems: 'center',
                 marginRight: 12
@@ -357,7 +491,7 @@ export default function SettingsScreen() {
                 <Text style={{
                   fontSize: 20,
                   fontWeight: '700',
-                  color: '#1A237E'
+                  color: theme.primary
                 }}>
                   Y
                 </Text>
@@ -439,12 +573,12 @@ export default function SettingsScreen() {
                 width: 32,
                 height: 32,
                 borderRadius: 16,
-                backgroundColor: '#E8EAF6',
+                backgroundColor: theme.primaryLight,
                 justifyContent: 'center',
                 alignItems: 'center',
                 marginRight: 12
               }}>
-                <Ionicons name="mail-outline" size={16} color="#e91e63" />
+                <Ionicons name="mail-outline" size={16} color={theme.primary} />
               </View>
               <View>
                 <Text style={{ fontSize: 11, color: '#9e9e9e' }}>
@@ -515,7 +649,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#fafafa'
   },
   header: {
-    backgroundColor: '#1A237E',
     paddingHorizontal: 20,
     paddingTop: 40,
     paddingBottom: 16
@@ -580,14 +713,12 @@ const styles = StyleSheet.create({
     color: '#212121'
   },
   defaultBadge: {
-    backgroundColor: '#E8EAF6',
     borderRadius: 10,
     paddingHorizontal: 8,
     paddingVertical: 3
   },
   defaultBadgeText: {
     fontSize: 11,
-    color: '#1A237E',
     fontWeight: '600'
   },
   planCardRow2: {
@@ -606,14 +737,12 @@ const styles = StyleSheet.create({
   },
   setDefaultButton: {
     borderWidth: 1,
-    borderColor: '#1A237E',
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 6
   },
   setDefaultText: {
-    fontSize: 12,
-    color: '#1A237E'
+    fontSize: 12
   },
   editButton: {
     borderWidth: 1,
@@ -714,7 +843,6 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     flex: 1,
-    backgroundColor: '#1A237E',
     borderRadius: 10,
     paddingVertical: 12,
     alignItems: 'center'
