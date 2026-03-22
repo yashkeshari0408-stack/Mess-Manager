@@ -499,8 +499,11 @@ export default function DashboardScreen() {
         <TouchableOpacity
           style={[
             styles.markButton,
-            notMarkedCount === 0 && totalUsers > 0 && {
+            {
               backgroundColor: theme.primary,
+              shadowColor: theme.primary
+            },
+            notMarkedCount === 0 && totalUsers > 0 && {
               borderColor: theme.primary,
               borderWidth: 1
             }
@@ -703,15 +706,15 @@ const styles = StyleSheet.create({
   markButton: {
     marginHorizontal: 16,
     marginTop: 10,
-    backgroundColor: '#1A237E',
     paddingVertical: 16,
     borderRadius: 12,
     flexDirection: 'row',
     justifyContent: 'center',
-    alignItems: 'center'
-  },
-  markButtonComplete: {
-    backgroundColor: '#4caf50'
+    alignItems: 'center',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4
   },
   markButtonText: {
     color: '#fff',
