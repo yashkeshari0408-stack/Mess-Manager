@@ -7,7 +7,8 @@ import {
   StyleSheet,
   ActivityIndicator,
   Platform,
-  Alert
+  Alert,
+  RefreshControl
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -226,6 +227,7 @@ export default function AttendanceScreen() {
   const [attendance, setAttendance] = useState({});
   const [loading, setLoading] = useState(true);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const dateStr = toDateString(selectedDate);
   const isWeekendDay = isWeekendDate(selectedDate);
@@ -254,6 +256,12 @@ export default function AttendanceScreen() {
       setLoading(false);
     }
   }, []);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await loadData(selectedDate, mealType);
+    setRefreshing(false);
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -332,8 +340,20 @@ export default function AttendanceScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={[styles.header, { backgroundColor: theme.headerBg }]}>
-        <Text style={styles.headerTitle}>Mark Attendance</Text>
-        <Text style={styles.headerSubtitle}>Bulk attendance marking.</Text>
+        <View>
+          <Text style={styles.headerTitle}>Mark Attendance</Text>
+          <Text style={styles.headerSubtitle}>Bulk attendance marking.</Text>
+        </View>
+        <TouchableOpacity
+          onPress={handleRefresh}
+          style={{ padding: 4 }}
+        >
+          <Ionicons
+            name="refresh-outline"
+            size={20}
+            color="#fff"
+          />
+        </TouchableOpacity>
       </View>
 
       <View style={styles.dateSection}>
@@ -439,6 +459,14 @@ export default function AttendanceScreen() {
           )}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              colors={[theme.primary]}
+              tintColor={theme.primary}
+            />
+          }
         />
       )}
     </SafeAreaView>
