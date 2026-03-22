@@ -27,7 +27,10 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 function toDateString(date) {
-  return date.toISOString().split('T')[0];
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
 }
 
 function formatDisplayDate(date) {
@@ -237,21 +240,18 @@ export default function AttendanceScreen() {
     setLoading(true);
     try {
       const dateStr = toDateString(date);
-      const [plansData, usersData, attendanceData] = await Promise.all([
-        getAllPlans(),
+      const [usersData, attendanceData] = await Promise.all([
         getUsersWithMealPlans(),
         getAttendanceByDateAndMeal(dateStr, meal)
       ]);
-      const hasMealPlans = plansData && plansData.length > 0;
-      setUsers(hasMealPlans ? usersData : []);
+      setUsers(usersData);
       const map = {};
       attendanceData.forEach(a => { 
         map[a.userId] = a.status; 
       });
       setAttendance(map);
-      console.log('Loaded attendance map:', map);
     } catch(e) {
-      console.log('loadData error:', e);
+      console.error('loadData error:', e);
     } finally {
       setLoading(false);
     }
@@ -432,6 +432,7 @@ export default function AttendanceScreen() {
 
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionHeaderText}>Select Attendance ({users.length} users)</Text>
+        {users.length > 0 && <Text style={{fontSize: 10, color: '#666'}}>Names: {users.map(u => u.name).join(', ')}</Text>}
       </View>
 
       {loading ? (
@@ -539,17 +540,10 @@ const styles = StyleSheet.create({
     borderColor: '#e0e0e0',
     marginRight: 8
   },
-  mealPillActive: {
-    backgroundColor: '#1A237E',
-    borderColor: '#1A237E'
-  },
   mealPillText: {
     fontSize: 14,
     color: '#757575',
     fontWeight: '500'
-  },
-  mealPillTextActive: {
-    color: '#fff'
   },
   sectionHeader: {
     paddingHorizontal: 20,

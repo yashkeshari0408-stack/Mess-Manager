@@ -141,7 +141,7 @@ export default function DashboardScreen() {
     const newDate = new Date(viewDate);
     newDate.setDate(newDate.getDate() - 1);
     setViewDate(newDate);
-    const dateStr = newDate.toISOString().split('T')[0];
+    const dateStr = toDateString(newDate);
     setViewDateStr(dateStr);
     const meal = getMealTypeForDate(newDate);
     setDashMealType(meal);
@@ -157,7 +157,7 @@ export default function DashboardScreen() {
     checkDate.setHours(0, 0, 0, 0);
     if (checkDate > today) return;
     setViewDate(newDate);
-    const dateStr = newDate.toISOString().split('T')[0];
+    const dateStr = toDateString(newDate);
     setViewDateStr(dateStr);
     const meal = getMealTypeForDate(newDate);
     setDashMealType(meal);
@@ -597,16 +597,6 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 100
-  },
-  contextBar: {
-    paddingHorizontal: 8,
-    paddingVertical: 8,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderColor: '#f0f0f0',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center'
   },
   dateArrow: {
     padding: 8

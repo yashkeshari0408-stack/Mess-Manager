@@ -246,7 +246,7 @@ export const getTodayStatusForAllUsers = (todayStr) => {
 
 export const getUsersWithMealPlans = () => {
   return selectQuery(`
-    SELECT u.id, u.name, u.phone, u.room,
+    SELECT u.id, u.name, u.phone,
       COALESCE(mp.tokensRemaining, 0) as tokensRemaining,
       mp.startDate, mp.endDate,
       CAST((julianday(mp.endDate) - julianday('now')) 
@@ -486,7 +486,6 @@ export const assignPlanToUser = async (userId, planId, startDate = null) => {
       plan = await getDefaultPlan();
     }
     if (!plan) {
-      console.log('No plan found for user:', userId);
       return;
     }
     const start = startDate || new Date().toISOString().split('T')[0];
@@ -502,7 +501,7 @@ export const assignPlanToUser = async (userId, planId, startDate = null) => {
        start, endDate, createdAt]
     );
   } catch (e) {
-    console.log('assignPlanToUser error:', e);
+    console.error('assignPlanToUser error:', e);
   }
 };
 

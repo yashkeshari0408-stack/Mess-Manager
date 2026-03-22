@@ -74,12 +74,19 @@ export default function AddEditUserScreen() {
       return;
     }
 
+    const getLocalDateString = (date) => {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    };
+
     const payload = {
       name: name.trim(),
       phone: phone.trim(),
       notes: notes.trim(),
       planId: selectedPlanId,
-      startDate: startDate.toISOString().split('T')[0]
+      startDate: getLocalDateString(startDate)
     };
 
     try {

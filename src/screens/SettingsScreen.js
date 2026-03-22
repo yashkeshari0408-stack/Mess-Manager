@@ -14,7 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import { useTheme, THEMES } from '../context/ThemeContext';
+import { useTheme } from '../context/ThemeContext';
 import {
   getAllPlans,
   createPlan,
@@ -136,7 +136,8 @@ export default function SettingsScreen() {
       return;
     }
     try {
-      const userCount = await getUsersCountByPlan(plan.id);
+      const userCountResult = await getUsersCountByPlan(plan.id);
+      const userCount = userCountResult[0]?.count || 0;
       if (userCount > 0) {
         Alert.alert(
           'Cannot Delete Plan',
@@ -698,9 +699,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 1
-  },
-  planCardDefault: {
-    borderColor: '#1A237E'
   },
   planCardRow1: {
     flexDirection: 'row',
