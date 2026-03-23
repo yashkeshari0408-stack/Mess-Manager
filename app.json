@@ -16,7 +16,8 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#1A237E"
       },
-      "package": "com.yash.suparnazkitchen"
+      "package": "com.yash.suparnazkitchen",
+      "softwareKeyboardLayoutMode": "pan"
     },
     "sdkVersion": "54.0.0",
     "platforms": [

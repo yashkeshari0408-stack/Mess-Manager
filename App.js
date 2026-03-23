@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, View, StyleSheet } from 'react-native';
+import { ActivityIndicator, View, StyleSheet, TouchableOpacity } from 'react-native';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 
 import { initDatabase } from './src/db/database';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
@@ -24,6 +26,7 @@ const Tab = createBottomTabNavigator();
 
 function TabNavigator() {
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
   
   return (
     <Tab.Navigator
@@ -48,13 +51,13 @@ function TabNavigator() {
         tabBarStyle: {
           backgroundColor: '#FFFFFF',
           borderTopWidth: 0,
-          shadowColor: theme.primary,
+          shadowColor: '#000',
           shadowOffset: { width: 0, height: -4 },
           shadowOpacity: 0.08,
           shadowRadius: 12,
           elevation: 8,
-          height: 64,
-          paddingBottom: 10,
+          height: 60 + insets.bottom,
+          paddingBottom: insets.bottom + 8,
           paddingTop: 6
         },
         tabBarLabelStyle: {
@@ -67,22 +70,54 @@ function TabNavigator() {
       <Tab.Screen
         name="Dashboard"
         component={DashboardScreen}
-        options={{ title: 'Dashboard' }}
+        options={{
+          title: 'Dashboard',
+          tabBarButton: (props) => (
+            <TouchableOpacity {...props} onPress={async () => {
+              try { await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); } catch (e) {}
+              props.onPress();
+            }} />
+          )
+        }}
       />
       <Tab.Screen
         name="Users"
         component={UsersScreen}
-        options={{ title: 'Users' }}
+        options={{
+          title: 'Users',
+          tabBarButton: (props) => (
+            <TouchableOpacity {...props} onPress={async () => {
+              try { await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); } catch (e) {}
+              props.onPress();
+            }} />
+          )
+        }}
       />
       <Tab.Screen
         name="Attendance"
         component={AttendanceScreen}
-        options={{ title: 'Attendance' }}
+        options={{
+          title: 'Attendance',
+          tabBarButton: (props) => (
+            <TouchableOpacity {...props} onPress={async () => {
+              try { await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); } catch (e) {}
+              props.onPress();
+            }} />
+          )
+        }}
       />
       <Tab.Screen
         name="Settings"
         component={SettingsScreen}
-        options={{ title: 'Settings' }}
+        options={{
+          title: 'Settings',
+          tabBarButton: (props) => (
+            <TouchableOpacity {...props} onPress={async () => {
+              try { await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); } catch (e) {}
+              props.onPress();
+            }} />
+          )
+        }}
       />
     </Tab.Navigator>
   );
@@ -108,47 +143,49 @@ export default function App() {
   }
 
   return (
-    <ThemeProvider>
-      <NavigationContainer>
-        <Stack.Navigator
-          initialRouteName="MainTabs"
-          screenOptions={{
-            headerTitleAlign: 'center'
-          }}
-        >
-          <Stack.Screen
-            name="MainTabs"
-            component={TabNavigator}
-            options={{ headerShown: false }}
-          />
-          <Stack.Screen
-            name="TodayStatus"
-            component={TodayStatusScreen}
-            options={{ title: 'Today Status' }}
-          />
-          <Stack.Screen
-            name="UserList"
-            component={UserListScreen}
-            options={{ title: 'Users' }}
-          />
-          <Stack.Screen
-            name="AddEditUser"
-            component={AddEditUserScreen}
-            options={{ title: 'User Details' }}
-          />
-          <Stack.Screen
-            name="TokenList"
-            component={TokenListScreen}
-            options={{ headerShown: false }}
-          />
-          <Stack.Screen
-            name="AddToken"
-            component={AddTokenScreen}
-            options={{ title: 'Add Token' }}
-          />
-        </Stack.Navigator>
-      </NavigationContainer>
-    </ThemeProvider>
+    <SafeAreaProvider>
+      <ThemeProvider>
+        <NavigationContainer>
+          <Stack.Navigator
+            initialRouteName="MainTabs"
+            screenOptions={{
+              headerTitleAlign: 'center'
+            }}
+          >
+            <Stack.Screen
+              name="MainTabs"
+              component={TabNavigator}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="TodayStatus"
+              component={TodayStatusScreen}
+              options={{ title: 'Today Status' }}
+            />
+            <Stack.Screen
+              name="UserList"
+              component={UserListScreen}
+              options={{ title: 'Users' }}
+            />
+            <Stack.Screen
+              name="AddEditUser"
+              component={AddEditUserScreen}
+              options={{ title: 'User Details' }}
+            />
+            <Stack.Screen
+              name="TokenList"
+              component={TokenListScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="AddToken"
+              component={AddTokenScreen}
+              options={{ title: 'Add Token' }}
+            />
+          </Stack.Navigator>
+        </NavigationContainer>
+      </ThemeProvider>
+    </SafeAreaProvider>
   );
 }
 

@@ -11,6 +11,7 @@ import {
   Alert,
   Linking
 } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
@@ -365,7 +366,13 @@ export default function SettingsScreen() {
                   padding: 16,
                   alignItems: 'center'
                 }}
-                onPress={() => switchTheme('green')}
+                onPress={async () => {
+                  try {
+                    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  } catch (e) {}
+                  await new Promise(r => setTimeout(r, 50));
+                  switchTheme('green');
+                }}
               >
                 <View style={{
                   width: 40,
@@ -409,7 +416,13 @@ export default function SettingsScreen() {
                   padding: 16,
                   alignItems: 'center'
                 }}
-                onPress={() => switchTheme('pink')}
+                onPress={async () => {
+                  try {
+                    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  } catch (e) {}
+                  await new Promise(r => setTimeout(r, 50));
+                  switchTheme('pink');
+                }}
               >
                 <View style={{
                   width: 40,

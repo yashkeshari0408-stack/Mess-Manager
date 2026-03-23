@@ -34,6 +34,32 @@ export default function AddEditUserScreen() {
   const [selectedPlanId, setSelectedPlanId] = useState(null);
   const [startDate, setStartDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [nameError, setNameError] = useState('');
+  const [phoneError, setPhoneError] = useState('');
+
+  const validateName = (value) => {
+    if (!value.trim()) {
+      return 'Name is required';
+    }
+    if (value.trim().length < 2) {
+      return 'Name must be at least 2 characters';
+    }
+    if (/[^a-zA-Z\s]/.test(value.trim())) {
+      return 'Name should only contain letters';
+    }
+    return '';
+  };
+
+  const validatePhone = (value) => {
+    if (!value.trim()) {
+      return 'Phone number is required';
+    }
+    const phoneRegex = /^[6-9]\d{9}$/;
+    if (!phoneRegex.test(value.trim())) {
+      return 'Enter a valid 10-digit mobile number';
+    }
+    return '';
+  };
 
   useEffect(() => {
     getAllPlans().then((data) => {
@@ -68,9 +94,14 @@ export default function AddEditUserScreen() {
     }
   };
 
-  const onSave = async () => {
-    if (!name.trim()) {
-      Alert.alert('Validation', 'Name is required.');
+  const onSaveClick = async () => {
+    const nameValidation = validateName(name);
+    const phoneValidation = validatePhone(phone);
+
+    setNameError(nameValidation);
+    setPhoneError(phoneValidation);
+
+    if (nameValidation || phoneValidation) {
       return;
     }
 
@@ -107,20 +138,29 @@ export default function AddEditUserScreen() {
     <ScrollView style={styles.container}>
       <Text style={styles.label}>Name *</Text>
       <TextInput
-        style={styles.input}
+        style={[styles.input, nameError ? styles.inputError : null]}
         value={name}
-        onChangeText={setName}
+        onChangeText={(text) => {
+          setName(text);
+          setNameError(validateName(text));
+        }}
         placeholder="Full name"
       />
+      {nameError ? <Text style={styles.errorText}>{nameError}</Text> : null}
 
-      <Text style={styles.label}>Phone</Text>
+      <Text style={styles.label}>Phone *</Text>
       <TextInput
-        style={styles.input}
+        style={[styles.input, phoneError ? styles.inputError : null]}
         value={phone}
-        onChangeText={setPhone}
+        onChangeText={(text) => {
+          setPhone(text);
+          setPhoneError(validatePhone(text));
+        }}
         placeholder="Phone number"
         keyboardType="phone-pad"
+        maxLength={10}
       />
+      {phoneError ? <Text style={styles.errorText}>{phoneError}</Text> : null}
 
       <Text style={styles.label}>Meal Plan</Text>
       {plans.map((plan) => (
@@ -178,7 +218,7 @@ export default function AddEditUserScreen() {
         numberOfLines={3}
       />
 
-      <TouchableOpacity style={[styles.button, { backgroundColor: theme.buttonBg }]} onPress={onSave}>
+      <TouchableOpacity style={[styles.button, { backgroundColor: theme.buttonBg }]} onPress={onSaveClick}>
         <Text style={styles.buttonText}>
           {editingUserId ? 'Update User' : 'Save User'}
         </Text>
@@ -209,6 +249,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#212121',
     backgroundColor: '#fff'
+  },
+  inputError: {
+    borderColor: '#d32f2f'
+  },
+  errorText: {
+    color: '#d32f2f',
+    fontSize: 12,
+    marginTop: 4,
+    marginBottom: 8
   },
   multiline: {
     textAlignVertical: 'top',
