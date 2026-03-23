@@ -115,9 +115,9 @@ describe('User CRUD', () => {
 describe('Token deduction logic', () => {
   test('Present status deducts 1 token', async () => {
     mockDb().runAsync.mockResolvedValue({ changes: 1 });
-    mockDb().getAllAsync.mockResolvedValueOnce([
-      { id: 1, userId: 1, tokensRemaining: 38 }
-    ]);
+    mockDb().getAllAsync
+      .mockResolvedValueOnce([]) // no previous attendance
+      .mockResolvedValueOnce([{ id: 1, userId: 1, tokensRemaining: 38 }]); // has meal plan
     await db.markAttendanceAndDeductToken(1, '2026-03-20', 'Dinner', 'Present');
     expect(mockDb().runAsync).toHaveBeenCalledWith(
       expect.stringContaining('MAX(0, tokensRemaining - 1)'),
@@ -127,9 +127,9 @@ describe('Token deduction logic', () => {
 
   test('Absent status deducts 1 token', async () => {
     mockDb().runAsync.mockResolvedValue({ changes: 1 });
-    mockDb().getAllAsync.mockResolvedValueOnce([
-      { id: 1, userId: 1, tokensRemaining: 38 }
-    ]);
+    mockDb().getAllAsync
+      .mockResolvedValueOnce([]) // no previous attendance
+      .mockResolvedValueOnce([{ id: 1, userId: 1, tokensRemaining: 38 }]); // has meal plan
     await db.markAttendanceAndDeductToken(1, '2026-03-20', 'Dinner', 'Absent');
     expect(mockDb().runAsync).toHaveBeenCalledWith(
       expect.stringContaining('MAX(0, tokensRemaining - 1)'),
@@ -139,6 +139,7 @@ describe('Token deduction logic', () => {
 
   test('Home status does NOT deduct token', async () => {
     mockDb().runAsync.mockResolvedValue({ changes: 1 });
+    mockDb().getAllAsync.mockResolvedValueOnce([]); // no previous attendance
     await db.markAttendanceAndDeductToken(1, '2026-03-20', 'Dinner', 'Home');
     expect(mockDb().runAsync).not.toHaveBeenCalledWith(
       expect.stringContaining('tokensRemaining - 1'),
@@ -148,9 +149,9 @@ describe('Token deduction logic', () => {
 
   test('token never goes below 0', async () => {
     mockDb().runAsync.mockResolvedValue({ changes: 1 });
-    mockDb().getAllAsync.mockResolvedValueOnce([
-      { id: 1, userId: 1, tokensRemaining: 0 }
-    ]);
+    mockDb().getAllAsync
+      .mockResolvedValueOnce([]) // no previous attendance
+      .mockResolvedValueOnce([{ id: 1, userId: 1, tokensRemaining: 0 }]); // has meal plan with 0 tokens
     await db.markAttendanceAndDeductToken(1, '2026-03-20', 'Dinner', 'Present');
     expect(mockDb().runAsync).toHaveBeenCalledWith(
       expect.stringContaining('MAX(0, tokensRemaining - 1)'),
@@ -169,7 +170,9 @@ describe('Token deduction logic', () => {
 
   test('new user gets MEAL_PLAN created on first attendance mark', async () => {
     mockDb().runAsync.mockResolvedValue({ changes: 1 });
-    mockDb().getAllAsync.mockResolvedValueOnce([]);
+    mockDb().getAllAsync
+      .mockResolvedValueOnce([]) // no previous attendance
+      .mockResolvedValueOnce([]); // no meal plan
     await db.markAttendanceAndDeductToken(1, '2026-03-20', 'Dinner', 'Present');
     expect(mockDb().runAsync).toHaveBeenCalledWith(
       expect.stringContaining('INSERT INTO MEAL_PLANS'),
@@ -179,14 +182,15 @@ describe('Token deduction logic', () => {
 
   test('same user marked twice same day does not double deduct', async () => {
     mockDb().runAsync.mockResolvedValue({ changes: 1 });
-    mockDb().getAllAsync.mockResolvedValueOnce([
-      { id: 1, userId: 1, tokensRemaining: 38 }
-    ]);
+    // First call: has previous attendance (Present), then has meal plan
+    mockDb().getAllAsync
+      .mockResolvedValueOnce([{ userId: 1, status: 'Present' }]) // previous attendance exists
+      .mockResolvedValueOnce([{ id: 1, userId: 1, tokensRemaining: 38 }]); // has meal plan
     await db.markAttendanceAndDeductToken(1, '2026-03-20', 'Dinner', 'Present');
     const deductCalls = mockDb().runAsync.mock.calls.filter(
       call => call[0].includes('tokensRemaining - 1')
     );
-    expect(deductCalls).toHaveLength(1);
+    expect(deductCalls).toHaveLength(0); // No deduction because status didn't change
   });
 });
 

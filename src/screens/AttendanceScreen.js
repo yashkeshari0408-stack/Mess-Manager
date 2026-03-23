@@ -7,8 +7,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   Platform,
-  Alert,
-  RefreshControl
+  Alert
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -192,7 +191,7 @@ function UserCard({ user, status, onMark, selectedDate, theme }) {
       <View style={styles.buttonRow}>
         <TouchableOpacity
           style={[styles.button, getButtonStyle('Present', '#4caf50', '#4caf50')]}
-          onPress={() => onMark(user.id, 'Present')}
+          onPress={() => onMark(user.id, 'Present', user.name)}
         >
           <Text style={{ color: getTextColor('Present', '#4caf50'), fontSize: 13, fontWeight: '600' }}>
             Present
@@ -200,7 +199,7 @@ function UserCard({ user, status, onMark, selectedDate, theme }) {
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.button, getButtonStyle('Absent', '#f44336', '#f44336')]}
-          onPress={() => onMark(user.id, 'Absent')}
+          onPress={() => onMark(user.id, 'Absent', user.name)}
         >
           <Text style={{ color: getTextColor('Absent', '#f44336'), fontSize: 13, fontWeight: '600' }}>
             Absent
@@ -208,7 +207,7 @@ function UserCard({ user, status, onMark, selectedDate, theme }) {
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.button, getButtonStyle('Home', '#1976d2', '#bdbdbd')]}
-          onPress={() => onMark(user.id, 'Home')}
+          onPress={() => onMark(user.id, 'Home', user.name)}
         >
           <Text style={{ color: getTextColor('Home', '#1976d2'), fontSize: 13, fontWeight: '600' }}>
             Home
@@ -230,7 +229,6 @@ export default function AttendanceScreen() {
   const [attendance, setAttendance] = useState({});
   const [loading, setLoading] = useState(true);
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
 
   const dateStr = toDateString(selectedDate);
   const isWeekendDay = isWeekendDate(selectedDate);
@@ -257,16 +255,10 @@ export default function AttendanceScreen() {
     }
   }, []);
 
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    await loadData(selectedDate, mealType);
-    setRefreshing(false);
-  };
-
   useFocusEffect(
     useCallback(() => {
       loadData(selectedDate, mealType);
-    }, [selectedDate, mealType, loadData])
+    }, [])
   );
 
   const changeDate = (delta) => {
@@ -307,34 +299,85 @@ export default function AttendanceScreen() {
     setMealType(meal);
   };
 
-  const handleMark = async (userId, newStatus) => {
+  const handleMark = async (userId, newStatus, userName) => {
     const prevStatus = attendance[userId] || null;
     
     if (prevStatus === newStatus) return;
 
-    setAttendance(prev => ({ ...prev, [userId]: newStatus }));
-
-    setUsers(prev => prev.map(u => {
-      if (u.id !== userId) return u;
-      const wasDeducting = prevStatus === 'Present' || prevStatus === 'Absent';
-      const willDeduct = newStatus === 'Present' || newStatus === 'Absent';
-      let delta = 0;
-      if (!wasDeducting && willDeduct) delta = -1;
-      if (wasDeducting && !willDeduct) delta = +1;
-      return { ...u, tokensRemaining: Math.max(0, u.tokensRemaining + delta) };
-    }));
-
-    try {
-      if ((prevStatus === 'Present' || prevStatus === 'Absent') 
-          && newStatus === 'Home') {
-        await refundToken(userId);
+    const getStatusEmoji = (status) => {
+      switch(status) {
+        case 'Present': return '✅';
+        case 'Absent': return '❌';
+        case 'Home': return '🏠';
+        default: return '';
       }
-      await markAttendanceAndDeductToken(userId, dateStr, mealType, newStatus);
-    } catch(e) {
-      console.log('handleMark error:', e);
-      Alert.alert('Error', 'Failed to save attendance. Please try again.');
-      loadData(selectedDate, mealType);
-    }
+    };
+
+    const getTokenMessage = () => {
+      const wasDeducting = prevStatus === 'Present' || 
+        prevStatus === 'Absent';
+      const willDeduct = newStatus === 'Present' || 
+        newStatus === 'Absent';
+      
+      if (!wasDeducting && willDeduct) 
+        return '\n\n⚠️ 1 token will be deducted.';
+      if (wasDeducting && !willDeduct) 
+        return '\n\n♻️ 1 token will be refunded.';
+      if (wasDeducting && willDeduct && prevStatus !== newStatus)
+        return '\n\nℹ️ No token change (already deducted).';
+      return '';
+    };
+
+    Alert.alert(
+      `${getStatusEmoji(newStatus)} Mark ${newStatus}`,
+      `Mark ${userName} as ${newStatus} for ${mealType}?${getTokenMessage()}`,
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel'
+        },
+        {
+          text: 'Confirm',
+          style: 'default',
+          onPress: async () => {
+            const dateStr = toDateString(selectedDate);
+
+            setAttendance(prev => ({ 
+              ...prev, [userId]: newStatus 
+            }));
+
+            setUsers(prev => prev.map(u => {
+              if (u.id !== userId) return u;
+              const wasDeducting = prevStatus === 'Present' || 
+                prevStatus === 'Absent';
+              const willDeduct = newStatus === 'Present' || 
+                newStatus === 'Absent';
+              let delta = 0;
+              if (!wasDeducting && willDeduct) delta = -1;
+              if (wasDeducting && !willDeduct) delta = +1;
+              return { 
+                ...u, 
+                tokensRemaining: Math.max(0, u.tokensRemaining + delta) 
+              };
+            }));
+
+            try {
+              await markAttendanceAndDeductToken(
+                userId, dateStr, mealType, newStatus
+              );
+            } catch(e) {
+              console.log('handleMark error:', e);
+              Alert.alert(
+                'Error', 
+                'Failed to save attendance. Please try again.'
+              );
+              loadData(selectedDate, mealType);
+            }
+          }
+        }
+      ],
+      { cancelable: true }
+    );
   };
 
   return (
@@ -344,16 +387,6 @@ export default function AttendanceScreen() {
           <Text style={styles.headerTitle}>Mark Attendance</Text>
           <Text style={styles.headerSubtitle}>Bulk attendance marking.</Text>
         </View>
-        <TouchableOpacity
-          onPress={handleRefresh}
-          style={{ padding: 4 }}
-        >
-          <Ionicons
-            name="refresh-outline"
-            size={20}
-            color="#fff"
-          />
-        </TouchableOpacity>
       </View>
 
       <View style={styles.dateSection}>
@@ -460,14 +493,6 @@ export default function AttendanceScreen() {
           )}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={handleRefresh}
-              colors={[theme.primary]}
-              tintColor={theme.primary}
-            />
-          }
         />
       )}
     </SafeAreaView>

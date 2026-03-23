@@ -6,8 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
-  Image,
-  RefreshControl
+  Image
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -73,7 +72,6 @@ export default function DashboardScreen() {
   const [expiredPlanUsers, setExpiredPlanUsers] = useState([]);
   const [lastMarkedInfo, setLastMarkedInfo] = useState(null);
   const [notMarkedUsers, setNotMarkedUsers] = useState([]);
-  const [refreshing, setRefreshing] = useState(false);
   const [dashMealType, setDashMealType] = useState(
     new Date().getDay() === 0 || new Date().getDay() === 6 ? 'Lunch' : 'Dinner'
   );
@@ -130,12 +128,6 @@ export default function DashboardScreen() {
     const dateStr = toDateString(viewDate);
     loadAllData(dateStr, dashMealType);
   }, [dashMealType]);
-
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    await loadAllData(toDateString(viewDate), dashMealType);
-    setRefreshing(false);
-  };
 
   const handlePrevDay = () => {
     const newDate = new Date(viewDate);
@@ -323,14 +315,6 @@ export default function DashboardScreen() {
       <ScrollView 
         contentContainerStyle={styles.scrollContent} 
         showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            colors={[theme.primary]}
-            tintColor={theme.primary}
-          />
-        }
       >
         <View style={{
           flexDirection: 'row',
@@ -399,20 +383,6 @@ export default function DashboardScreen() {
               {getMealBadgeText()}
             </Text>
           </View>
-
-          <TouchableOpacity
-            onPress={handleRefresh}
-            style={{ padding: 4 }}
-          >
-            <Ionicons 
-              name={refreshing ? "sync" : "refresh-outline"}
-              size={18} 
-              color={theme.primary}
-              style={refreshing ? { 
-                transform: [{ rotate: '45deg' }] 
-              } : {}}
-            />
-          </TouchableOpacity>
         </View>
 
         {isViewDateWeekend() && (

@@ -286,19 +286,32 @@ export const markAttendanceAndDeductToken = async (userId, date, mealType, statu
   const db = await getDb();
   
   try {
+    const prevAttendance = await db.getAllAsync(
+      'SELECT * FROM ATTENDANCE WHERE userId = ? AND date = ? AND mealType = ?;',
+      [userId, date, mealType]
+    );
+    const prevStatus = prevAttendance.length > 0 ? prevAttendance[0].status : null;
+    const prevWasDeducting = prevStatus === 'Present' || prevStatus === 'Absent';
+    const willDeduct = status === 'Present' || status === 'Absent';
+
+    let tokenDelta = 0;
+    if (!prevWasDeducting && willDeduct) tokenDelta = -1;
+    else if (prevWasDeducting && !willDeduct) tokenDelta = +1;
+    else if (prevWasDeducting && willDeduct && prevStatus !== status) tokenDelta = 0;
+
     await db.runAsync(
       `INSERT OR REPLACE INTO ATTENDANCE (userId, date, mealType, status, createdAt)
        VALUES (?, ?, ?, ?, ?);`,
       [userId, date, mealType, status, new Date().toISOString()]
     );
 
-    if (status === 'Present' || status === 'Absent') {
+    if (tokenDelta !== 0) {
       const existing = await db.getAllAsync(
         'SELECT * FROM MEAL_PLANS WHERE userId = ?;', 
         [userId]
       );
       
-      if (existing.length === 0) {
+      if (existing.length === 0 && tokenDelta < 0) {
         const end = new Date(date);
         end.setDate(end.getDate() + 40);
         const endDate = end.toISOString().split('T')[0];
@@ -308,17 +321,32 @@ export const markAttendanceAndDeductToken = async (userId, date, mealType, statu
            VALUES (?, 37, ?, ?, ?);`,
           [userId, date, endDate, new Date().toISOString()]
         );
-      } else {
-        await db.runAsync(
-          `UPDATE MEAL_PLANS 
-           SET tokensRemaining = MAX(0, tokensRemaining - 1)
-           WHERE userId = ?;`,
-          [userId]
-        );
+      } else if (existing.length > 0) {
+        if (tokenDelta < 0) {
+          await db.runAsync(
+            `UPDATE MEAL_PLANS 
+             SET tokensRemaining = MAX(0, tokensRemaining - 1)
+             WHERE userId = ?;`,
+            [userId]
+          );
+        } else if (tokenDelta > 0) {
+          await db.runAsync(
+            `UPDATE MEAL_PLANS 
+             SET tokensRemaining = MIN(
+               COALESCE(
+                 (SELECT tokensCount FROM PLANS WHERE id = MEAL_PLANS.planId),
+                 38
+               ),
+               tokensRemaining + 1
+             )
+             WHERE userId = ?;`,
+            [userId]
+          );
+        }
       }
     }
     
-    console.log('Attendance marked successfully:', userId, date, mealType, status);
+    console.log('Attendance marked successfully:', userId, date, mealType, status, 'tokenDelta:', tokenDelta);
   } catch(e) {
     console.log('markAttendanceAndDeductToken error:', e);
     throw e;
