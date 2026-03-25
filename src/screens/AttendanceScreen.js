@@ -34,7 +34,7 @@ function toDateString(date) {
 
 function formatDisplayDate(date) {
   return date.toLocaleDateString('en-US', { 
-    month: 'short', day: 'numeric', year: 'numeric' 
+    weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' 
   });
 }
 
@@ -66,42 +66,53 @@ function UserCard({ user, status, onMark, selectedDate, theme }) {
   const planStartDate = normalizeDate(user.startDate);
   const normalizedSelectedDate = selectedDateStr.substring(0, 10);
 
+  const getStatusColor = (s) => {
+    if (s === 'Present') return '#4caf50';
+    if (s === 'Absent') return '#f44336';
+    if (s === 'Home') return '#1976d2';
+    return '#9e9e9e';
+  };
+  const accentColor = getStatusColor(currentStatus);
+
   if (planStartDate && normalizedSelectedDate < planStartDate) {
     return (
-      <View style={styles.card}>
-        <View style={styles.cardTop}>
-          <View style={[styles.avatar, { backgroundColor: theme.avatarBg }]}>
-            <Text style={[styles.avatarText, { color: theme.avatarText }]}>
-              {user.name.charAt(0).toUpperCase()}
+      <View style={[styles.card, { paddingLeft: 12 }]}>
+        <View style={[styles.accentBar, { backgroundColor: '#ff9800' }]} />
+        <View style={styles.cardContent}>
+          <View style={styles.cardTop}>
+            <View style={[styles.avatar, { backgroundColor: theme.avatarBg }]}>
+              <Text style={[styles.avatarText, { color: theme.avatarText }]}>
+                {user.name.charAt(0).toUpperCase()}
+              </Text>
+            </View>
+            <View style={styles.userInfo}>
+              <Text style={styles.userName}>{user.name}</Text>
+              <Text style={{ 
+                fontSize: 11, 
+                color: '#ff9800', 
+                marginTop: 1 
+              }}>
+                Plan starts on {formatDisplayDate(new Date(user.startDate))}
+              </Text>
+            </View>
+          </View>
+          <View style={{
+            backgroundColor: '#FFF8E1',
+            borderRadius: 6,
+            padding: 8,
+            flexDirection: 'row',
+            alignItems: 'center'
+          }}>
+            <Ionicons 
+              name="information-circle-outline" 
+              size={12} 
+              color="#ff9800" 
+              style={{ marginRight: 6 }}
+            />
+            <Text style={{ fontSize: 11, color: '#ff9800' }}>
+              Cannot mark attendance before plan start date
             </Text>
           </View>
-          <View style={styles.userInfo}>
-            <Text style={styles.userName}>{user.name}</Text>
-            <Text style={{ 
-              fontSize: 12, 
-              color: '#ff9800', 
-              marginTop: 2 
-            }}>
-              Plan starts on {formatDisplayDate(new Date(user.startDate))}
-            </Text>
-          </View>
-        </View>
-        <View style={{
-          backgroundColor: '#FFF8E1',
-          borderRadius: 8,
-          padding: 10,
-          flexDirection: 'row',
-          alignItems: 'center'
-        }}>
-          <Ionicons 
-            name="information-circle-outline" 
-            size={14} 
-            color="#ff9800" 
-            style={{ marginRight: 6 }}
-          />
-          <Text style={{ fontSize: 12, color: '#ff9800' }}>
-            Cannot mark attendance before plan start date
-          </Text>
         </View>
       </View>
     );
@@ -124,40 +135,43 @@ function UserCard({ user, status, onMark, selectedDate, theme }) {
     };
 
     return (
-      <View style={styles.card}>
-        <View style={styles.cardTop}>
-          <View style={[styles.avatar, { backgroundColor: theme.avatarBg }]}>
-            <Text style={[styles.avatarText, { color: theme.avatarText }]}>
-              {user.name.charAt(0).toUpperCase()}
+      <View style={[styles.card, { paddingLeft: 12 }]}>
+        <View style={[styles.accentBar, { backgroundColor: '#f44336' }]} />
+        <View style={styles.cardContent}>
+          <View style={styles.cardTop}>
+            <View style={[styles.avatar, { backgroundColor: theme.avatarBg }]}>
+              <Text style={[styles.avatarText, { color: theme.avatarText }]}>
+                {user.name.charAt(0).toUpperCase()}
+              </Text>
+            </View>
+            <View style={styles.userInfo}>
+              <Text style={styles.userName}>{user.name}</Text>
+              <Text style={{ 
+                fontSize: 11, 
+                color: '#f44336', 
+                marginTop: 1 
+              }}>
+                {getMessage()}
+              </Text>
+            </View>
+          </View>
+          <View style={{
+            backgroundColor: '#fde8e8',
+            borderRadius: 6,
+            padding: 8,
+            flexDirection: 'row',
+            alignItems: 'center'
+          }}>
+            <Ionicons 
+              name="alert-circle-outline" 
+              size={12} 
+              color="#f44336" 
+              style={{ marginRight: 6 }}
+            />
+            <Text style={{ fontSize: 11, color: '#f44336' }}>
+              {getGuideText()}
             </Text>
           </View>
-          <View style={styles.userInfo}>
-            <Text style={styles.userName}>{user.name}</Text>
-            <Text style={{ 
-              fontSize: 12, 
-              color: '#f44336', 
-              marginTop: 2 
-            }}>
-              {getMessage()}
-            </Text>
-          </View>
-        </View>
-        <View style={{
-          backgroundColor: '#fde8e8',
-          borderRadius: 8,
-          padding: 10,
-          flexDirection: 'row',
-          alignItems: 'center'
-        }}>
-          <Ionicons 
-            name="alert-circle-outline" 
-            size={14} 
-            color="#f44336" 
-            style={{ marginRight: 6 }}
-          />
-          <Text style={{ fontSize: 12, color: '#f44336' }}>
-            {getGuideText()}
-          </Text>
         </View>
       </View>
     );
@@ -175,44 +189,49 @@ function UserCard({ user, status, onMark, selectedDate, theme }) {
   };
 
   return (
-    <View style={styles.card}>
-      <View style={styles.cardTop}>
-        <View style={[styles.avatar, { backgroundColor: theme.avatarBg }]}>
-          <Text style={[styles.avatarText, { color: theme.avatarText }]}>{user.name.charAt(0).toUpperCase()}</Text>
+    <View style={[styles.card, { paddingLeft: 12 }]}>
+      <View style={[styles.accentBar, { backgroundColor: accentColor }]} />
+      <View style={styles.cardContent}>
+        <View style={styles.cardTop}>
+          <View style={[styles.avatar, { backgroundColor: theme.avatarBg }]}>
+            <Text style={[styles.avatarText, { color: theme.avatarText }]}>{user.name.charAt(0).toUpperCase()}</Text>
+          </View>
+          <View style={styles.userInfo}>
+            <Text style={styles.userName}>{user.name}</Text>
+          </View>
+          <View style={[styles.tokenPill, { backgroundColor: theme.buttonBg }]}>
+            <Text style={styles.tokenPillText}>
+              {user.tokensRemaining}
+              {showTokenDeduction && <Text style={styles.tokenDeduction}> (-1)</Text>}
+            </Text>
+          </View>
         </View>
-        <View style={styles.userInfo}>
-          <Text style={styles.userName}>{user.name}</Text>
-          <Text style={styles.tokenText}>
-            {user.tokensRemaining} tokens
-            {showTokenDeduction && <Text style={styles.tokenDeduction}> (-1)</Text>}
-          </Text>
+        <View style={styles.buttonRow}>
+          <TouchableOpacity
+            style={[styles.button, getButtonStyle('Present', '#4caf50', '#4caf50')]}
+            onPress={() => onMark(user.id, 'Present', user.name)}
+          >
+            <Text style={{ color: getTextColor('Present', '#4caf50'), fontSize: 12, fontWeight: '600' }}>
+              Present
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.button, getButtonStyle('Absent', '#f44336', '#f44336')]}
+            onPress={() => onMark(user.id, 'Absent', user.name)}
+          >
+            <Text style={{ color: getTextColor('Absent', '#f44336'), fontSize: 12, fontWeight: '600' }}>
+              Absent
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.button, getButtonStyle('Home', '#1976d2', '#bdbdbd')]}
+            onPress={() => onMark(user.id, 'Home', user.name)}
+          >
+            <Text style={{ color: getTextColor('Home', '#1976d2'), fontSize: 12, fontWeight: '600' }}>
+              Home
+            </Text>
+          </TouchableOpacity>
         </View>
-      </View>
-      <View style={styles.buttonRow}>
-        <TouchableOpacity
-          style={[styles.button, getButtonStyle('Present', '#4caf50', '#4caf50')]}
-          onPress={() => onMark(user.id, 'Present', user.name)}
-        >
-          <Text style={{ color: getTextColor('Present', '#4caf50'), fontSize: 13, fontWeight: '600' }}>
-            Present
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.button, getButtonStyle('Absent', '#f44336', '#f44336')]}
-          onPress={() => onMark(user.id, 'Absent', user.name)}
-        >
-          <Text style={{ color: getTextColor('Absent', '#f44336'), fontSize: 13, fontWeight: '600' }}>
-            Absent
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.button, getButtonStyle('Home', '#1976d2', '#bdbdbd')]}
-          onPress={() => onMark(user.id, 'Home', user.name)}
-        >
-          <Text style={{ color: getTextColor('Home', '#1976d2'), fontSize: 13, fontWeight: '600' }}>
-            Home
-          </Text>
-        </TouchableOpacity>
       </View>
     </View>
   );
@@ -257,8 +276,35 @@ export default function AttendanceScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      loadData(selectedDate, mealType);
-    }, [])
+      const currentDate = selectedDate;
+      const currentMeal = mealType;
+      
+      const reload = async () => {
+        setLoading(true);
+        try {
+          const dateStr = toDateString(currentDate);
+          const [usersData, attendanceData] = await Promise.all([
+            getUsersWithMealPlans(),
+            getAttendanceByDateAndMeal(dateStr, currentMeal)
+          ]);
+          
+          const map = {};
+          attendanceData.forEach(a => {
+            map[a.userId] = a.status;
+          });
+          
+          setUsers(usersData);
+          setAttendance(map);
+        } catch(e) {
+          console.log('Focus reload error:', e);
+        } finally {
+          setLoading(false);
+        }
+      };
+      
+      reload();
+      return () => {};
+    }, [selectedDate, mealType])
   );
 
   const changeDate = (delta) => {
@@ -270,6 +316,7 @@ export default function AttendanceScreen() {
     newDate.setHours(0, 0, 0, 0);
     if (newDate > today) return;
 
+    setAttendance({});
     setSelectedDate(newDate);
 
     const newDateIsWeekend = isWeekendDate(newDate);
@@ -283,7 +330,6 @@ export default function AttendanceScreen() {
       setMealType('Lunch');
     }
 
-    setShowLunch(newDateIsWeekend);
     loadData(newDate, newMeal);
   };
 
@@ -295,8 +341,26 @@ export default function AttendanceScreen() {
     changeDate(1);
   };
 
-  const changeMeal = (meal) => {
+  const changeMeal = async (meal) => {
+    if (meal === mealType) return;
     setMealType(meal);
+    setAttendance({});
+    setLoading(true);
+    try {
+      const dateStr = toDateString(selectedDate);
+      const attendanceData = await getAttendanceByDateAndMeal(
+        dateStr, meal
+      );
+      const map = {};
+      attendanceData.forEach(a => {
+        map[a.userId] = a.status;
+      });
+      setAttendance(map);
+    } catch(e) {
+      console.log('changeMeal error:', e);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleMark = async (userId, newStatus, userName) => {
@@ -389,20 +453,92 @@ export default function AttendanceScreen() {
         </View>
       </View>
 
-      <View style={styles.dateSection}>
-        <Text style={styles.label}>Date</Text>
-        <View style={styles.dateRow}>
-          <TouchableOpacity onPress={handlePrevDay} style={styles.dateArrow} testID="back-date-arrow">
-            <Ionicons name="chevron-back" size={24} color="#9e9e9e" />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.dateDisplay}>
-            <Ionicons name="calendar-outline" size={18} color="#757575" />
-            <Text style={styles.dateText}>{formatDate(selectedDate)}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={handleNextDay} style={styles.dateArrow} disabled={isTodaySelected} testID="forward-date-arrow">
-            <Ionicons name="chevron-forward" size={24} color="#9e9e9e" style={isTodaySelected ? { opacity: 0.3 } : {}} />
-          </TouchableOpacity>
-        </View>
+      <View style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        backgroundColor: '#fff',
+        borderBottomWidth: 1,
+        borderBottomColor: '#f0f0f0',
+        gap: 8
+      }}>
+        <TouchableOpacity 
+          onPress={() => changeDate(-1)}
+          style={{ padding: 4 }}
+        >
+          <Ionicons name="chevron-back" size={20} color="#555" />
+        </TouchableOpacity>
+
+        <Text style={{ 
+          fontSize: 14, 
+          fontWeight: '700', 
+          color: '#212121',
+          flex: 1,
+          textAlign: 'center'
+        }}>
+          {formatDisplayDate(selectedDate)}
+        </Text>
+
+        <TouchableOpacity
+          onPress={() => changeDate(1)}
+          disabled={isTodaySelected}
+          style={{ padding: 4, opacity: isTodaySelected ? 0.3 : 1 }}
+        >
+          <Ionicons name="chevron-forward" size={20} color="#555" />
+        </TouchableOpacity>
+
+        <View style={{
+          width: 1,
+          height: 20,
+          backgroundColor: '#e0e0e0'
+        }}/>
+
+        {isWeekendDate(selectedDate) ? (
+          <View style={{
+            flexDirection: 'row',
+            backgroundColor: '#f0f0f0',
+            borderRadius: 20,
+            padding: 3
+          }}>
+            {['Lunch', 'Dinner'].map(meal => (
+              <TouchableOpacity
+                key={meal}
+                onPress={() => changeMeal(meal)}
+                style={{
+                  paddingHorizontal: 12,
+                  paddingVertical: 5,
+                  borderRadius: 17,
+                  backgroundColor: mealType === meal 
+                    ? theme.primary : 'transparent'
+                }}
+              >
+                <Text style={{
+                  fontSize: 12,
+                  fontWeight: '700',
+                  color: mealType === meal ? '#fff' : '#9e9e9e'
+                }}>
+                  {meal}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        ) : (
+          <View style={{
+            backgroundColor: theme.primaryLight,
+            borderRadius: 20,
+            paddingHorizontal: 12,
+            paddingVertical: 5
+          }}>
+            <Text style={{
+              fontSize: 12,
+              fontWeight: '700',
+              color: theme.primary
+            }}>
+              Dinner
+            </Text>
+          </View>
+        )}
       </View>
 
       {showDatePicker && (
@@ -431,43 +567,6 @@ export default function AttendanceScreen() {
         />
       )}
 
-      <View style={styles.mealSection}>
-        <Text style={styles.label}>Meal Type</Text>
-        {isWeekendDate(selectedDate) ? (
-          <View style={styles.mealToggle}>
-            <TouchableOpacity
-              style={[styles.mealPill, mealType === 'Lunch' && { backgroundColor: theme.buttonBg, borderColor: theme.buttonBg }]}
-              onPress={() => changeMeal('Lunch')}
-            >
-              <Text style={[styles.mealPillText, mealType === 'Lunch' && { color: '#fff' }]}>
-                Lunch
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.mealPill, mealType === 'Dinner' && { backgroundColor: theme.buttonBg, borderColor: theme.buttonBg }]}
-              onPress={() => changeMeal('Dinner')}
-            >
-              <Text style={[styles.mealPillText, mealType === 'Dinner' && { color: '#fff' }]}>
-                Dinner
-              </Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <View style={styles.mealToggle}>
-            <View style={[styles.mealPill, { backgroundColor: theme.buttonBg, borderColor: theme.buttonBg }]}>
-              <Text style={[styles.mealPillText, { color: '#fff' }]}>
-                Dinner
-              </Text>
-            </View>
-          </View>
-        )}
-      </View>
-
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionHeaderText}>Select Attendance ({users.length} users)</Text>
-        {users.length > 0 && <Text style={{fontSize: 10, color: '#666'}}>Names: {users.map(u => u.name).join(', ')}</Text>}
-      </View>
-
       {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={theme.primary} />
@@ -491,6 +590,21 @@ export default function AttendanceScreen() {
               theme={theme}
             />
           )}
+          ListHeaderComponent={
+            <View style={{
+              paddingHorizontal: 16,
+              paddingVertical: 10,
+              backgroundColor: '#fafafa'
+            }}>
+              <Text style={{
+                fontSize: 15,
+                fontWeight: '800',
+                color: '#212121'
+              }}>
+                Select Attendance ({users.length} users)
+              </Text>
+            </View>
+          }
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
         />
@@ -501,7 +615,7 @@ export default function AttendanceScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     backgroundColor: '#fafafa'
   },
   header: {
@@ -520,73 +634,13 @@ const styles = StyleSheet.create({
     marginTop: 2,
     opacity: 0.9
   },
-  dateSection: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 8
-  },
-  label: {
-    fontSize: 13,
-    color: '#9e9e9e',
-    marginBottom: 8
-  },
-  dateRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between'
-  },
-  dateArrow: {
-    padding: 8
-  },
-  dateDisplay: {
-    flexDirection: 'row',
-    alignItems: 'center'
-  },
-  dateText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#212121',
-    marginLeft: 8
-  },
-  mealSection: {
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 8
-  },
-  mealToggle: {
-    flexDirection: 'row'
-  },
-  mealPill: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#fff',
-    borderWidth: 1.5,
-    borderColor: '#e0e0e0',
-    marginRight: 8
-  },
-  mealPillText: {
-    fontSize: 14,
-    color: '#757575',
-    fontWeight: '500'
-  },
-  sectionHeader: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 8
-  },
-  sectionHeaderText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#424242'
-  },
   loadingContainer: {
-    flex: 1,
+    minHeight: 200,
     justifyContent: 'center',
     alignItems: 'center'
   },
   emptyContainer: {
-    flex: 1,
+    minHeight: 200,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 32
@@ -609,47 +663,67 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 10,
+    padding: 12,
     marginBottom: 8,
+    flexDirection: 'row',
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4
   },
+  accentBar: {
+    width: 4,
+    borderRadius: 2,
+    marginRight: 10
+  },
+  cardContent: {
+    flex: 1
+  },
   cardTop: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12
+    marginBottom: 8
   },
   avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center'
   },
   avatarText: {
-    fontSize: 18,
+    fontSize: 15,
     fontWeight: '700'
   },
   userInfo: {
-    marginLeft: 12,
+    marginLeft: 10,
     flex: 1
   },
   userName: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '600',
     color: '#212121'
   },
+  tokenPill: {
+    backgroundColor: '#009688',
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4
+  },
+  tokenPillText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#fff'
+  },
   tokenText: {
-    fontSize: 13,
+    fontSize: 12,
     color: '#9e9e9e',
-    marginTop: 2
+    marginTop: 1
   },
   tokenDeduction: {
-    color: '#f44336'
+    color: '#fff'
   },
   buttonRow: {
     flexDirection: 'row',
@@ -657,9 +731,9 @@ const styles = StyleSheet.create({
   },
   button: {
     flex: 1,
-    paddingVertical: 10,
-    borderRadius: 8,
+    paddingVertical: 8,
+    borderRadius: 50,
     alignItems: 'center',
-    marginHorizontal: 4
+    marginHorizontal: 3
   }
 });

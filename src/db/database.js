@@ -537,12 +537,11 @@ export const assignDefaultPlanToUser = async (userId) => {
   await assignPlanToUser(userId, null);
 };
 
-export const getUserAttendanceExceptions = (userId) => {
-  console.log('Getting exceptions for user:', userId);
+export const getUserAttendanceHistory = (userId) => {
   return selectQuery(`
     SELECT date, mealType, status
     FROM ATTENDANCE
-    WHERE userId = ? AND status IN ('Absent', 'Home')
+    WHERE userId = ?
     ORDER BY date DESC, mealType ASC;
   `, [userId]);
 };

@@ -16,7 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useTheme } from '../context/ThemeContext';
-import { getUsersWithTokenInfo, deleteUser, getUserAttendanceExceptions } from '../db/database';
+import { getUsersWithTokenInfo, deleteUser, getUserAttendanceHistory } from '../db/database';
 
 function UserCard({ user, onTap, onDelete, theme }) {
   const initial = user.name.charAt(0).toUpperCase();
@@ -122,7 +122,7 @@ export default function UserListScreen() {
   useEffect(() => {
     if (showModal && selectedUser) {
       console.log('Refreshing exceptions for user:', selectedUser.id);
-      getUserAttendanceExceptions(selectedUser.id)
+      getUserAttendanceHistory(selectedUser.id)
         .then(data => {
           console.log('Exceptions loaded:', data.length);
           setExceptions(data);
@@ -137,7 +137,7 @@ export default function UserListScreen() {
     setShowModal(true);
     setExceptionsLoading(true);
     try {
-      const data = await getUserAttendanceExceptions(user.id);
+      const data = await getUserAttendanceHistory(user.id);
       setExceptions(data);
     } catch (e) {
       console.log('exceptions error', e);
@@ -305,60 +305,137 @@ export default function UserListScreen() {
 
             <View style={styles.modalDivider} />
 
-            <View style={styles.modalPlanRow}>
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{
+                paddingHorizontal: 20,
+                paddingVertical: 12,
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 16
+              }}
+            >
               {selectedUser?.planName && (
-                <View style={styles.planPill}>
-                  <Ionicons name="restaurant-outline" size={13} color={theme.primary} />
-                  <Text style={[styles.planPillText, styles.planNameText, { color: theme.primary }]}>{selectedUser.planName}</Text>
+                <View style={{
+                  flexDirection: 'row',
+                  alignItems: 'center'
+                }}>
+                  <Ionicons 
+                    name="pricetag-outline" 
+                    size={13} 
+                    color="#9e9e9e" 
+                    style={{ marginRight: 4 }}
+                  />
+                  <Text style={{ fontSize: 12, color: theme.primary, 
+                    fontWeight: '600' }}>
+                    {selectedUser.planName}
+                  </Text>
                 </View>
               )}
-              <View style={styles.planPill}>
-                <Ionicons name="calendar-outline" size={13} color="#9e9e9e" />
-                <Text style={styles.planPillText}>Started: {formatDate(selectedUser?.startDate)}</Text>
+
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Ionicons 
+                  name="calendar-outline" 
+                  size={13} 
+                  color="#9e9e9e" 
+                  style={{ marginRight: 4 }}
+                />
+                <Text style={{ fontSize: 12, color: '#9e9e9e' }}>
+                  Started: {selectedUser?.startDate 
+                    ? formatDate(selectedUser.startDate) 
+                    : 'N/A'}
+                </Text>
               </View>
-              <View style={styles.planPill}>
-                <Ionicons name="time-outline" size={13} color="#9e9e9e" />
-                <Text style={styles.planPillText}>Expires: {formatDate(selectedUser?.endDate)}</Text>
+
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Ionicons 
+                  name="time-outline" 
+                  size={13} 
+                  color="#9e9e9e" 
+                  style={{ marginRight: 4 }}
+                />
+                <Text style={{ fontSize: 12, color: '#9e9e9e' }}>
+                  Expires: {selectedUser?.endDate 
+                    ? formatDate(selectedUser.endDate) 
+                    : 'N/A'}
+                </Text>
               </View>
-            </View>
+            </ScrollView>
 
             <View style={styles.exceptionsSection}>
-              <Text style={styles.exceptionsLabel}>Absent & Home History</Text>
+              <Text style={styles.exceptionsLabel}>History</Text>
               
               {exceptionsLoading ? (
                 <ActivityIndicator size="small" color={theme.primary} style={styles.exceptionsLoading} />
               ) : exceptions.length === 0 ? (
                 <View style={styles.noExceptionsContainer}>
                   <Ionicons name="checkmark-circle-outline" size={32} color="#4caf50" />
-                  <Text style={styles.noExceptionsText}>No absences or home markings</Text>
+                  <Text style={styles.noExceptionsText}>No attendance history yet</Text>
                 </View>
               ) : (
                 <ScrollView style={styles.exceptionsScroll}>
-                  {exceptions.map((item, index) => (
-                    <View
-                      key={index}
-                      style={[
-                        styles.exceptionRow,
-                        index === exceptions.length - 1 && styles.exceptionRowLast
-                      ]}
-                    >
-                      <View>
-                        <Text style={styles.exceptionDate}>{formatShortDate(item.date)}</Text>
-                        <Text style={styles.exceptionMeal}>{item.mealType}</Text>
+                  {exceptions.map((item, index) => {
+                    const getStatusStyle = (status) => {
+                      switch(status) {
+                        case 'Present':
+                          return { 
+                            bg: '#E8F5E9', 
+                            color: '#2E7D32' 
+                          };
+                        case 'Absent':
+                          return { 
+                            bg: '#FEE2E2', 
+                            color: '#DC2626' 
+                          };
+                        case 'Home':
+                          return { 
+                            bg: '#DBEAFE', 
+                            color: '#1D4ED8' 
+                          };
+                        default:
+                          return { 
+                            bg: '#F5F5F5', 
+                            color: '#9E9E9E' 
+                          };
+                      }
+                    };
+                    const statusStyle = getStatusStyle(item.status);
+                    return (
+                      <View
+                        key={index}
+                        style={[
+                          styles.exceptionRow,
+                          index === exceptions.length - 1 && styles.exceptionRowLast
+                        ]}
+                      >
+                        <View>
+                          <Text style={styles.exceptionDate}>{formatShortDate(item.date)}</Text>
+                          <Text style={{ 
+                            fontSize: 11, 
+                            color: '#9e9e9e', 
+                            marginTop: 2 
+                          }}>
+                            {item.mealType}
+                          </Text>
+                        </View>
+                        <View style={{
+                          backgroundColor: statusStyle.bg,
+                          borderRadius: 20,
+                          paddingHorizontal: 14,
+                          paddingVertical: 4
+                        }}>
+                          <Text style={{
+                            color: statusStyle.color,
+                            fontSize: 12,
+                            fontWeight: '700'
+                          }}>
+                            {item.status}
+                          </Text>
+                        </View>
                       </View>
-                      <View style={[
-                        styles.statusBadge,
-                        item.status === 'Absent' ? styles.statusAbsent : styles.statusHome
-                      ]}>
-                        <Text style={[
-                          styles.statusText,
-                          item.status === 'Absent' ? styles.statusTextAbsent : styles.statusTextHome
-                        ]}>
-                          {item.status}
-                        </Text>
-                      </View>
-                    </View>
-                  ))}
+                    );
+                  })}
                 </ScrollView>
               )}
             </View>
@@ -382,7 +459,7 @@ export default function UserListScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     backgroundColor: '#fafafa'
   },
   header: {
@@ -434,7 +511,7 @@ const styles = StyleSheet.create({
     color: '#212121'
   },
   loadingContainer: {
-    flex: 1,
+    minHeight: 200,
     justifyContent: 'center',
     alignItems: 'center'
   },
@@ -443,7 +520,7 @@ const styles = StyleSheet.create({
     paddingBottom: 100
   },
   emptyContainer: {
-    flex: 1,
+    minHeight: 200,
     justifyContent: 'center',
     alignItems: 'center'
   },

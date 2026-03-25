@@ -539,7 +539,7 @@ export default function DashboardScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     backgroundColor: '#fafafa'
   },
   header: {
@@ -561,7 +561,7 @@ const styles = StyleSheet.create({
     color: '#fff'
   },
   loadingContainer: {
-    flex: 1,
+    minHeight: 200,
     justifyContent: 'center',
     alignItems: 'center'
   },
